@@ -302,19 +302,33 @@ async function loadPnl() {
 }
 
 // ==== Поля дня: прибуток, кроки, настрій, спортзал ====
-const FIELD_KEYS = ['profit', 'steps', 'mood', 'moodNote', 'gym', 'gymNote'];
-const MOODS = [['😄', 'Чудово'], ['🙂', 'Добре'], ['😐', 'Нормально'], ['😔', 'Сумно'], ['😠', 'Злість'], ['😰', 'Тривога']];
-let moodSel = null;
-for (const [m, name] of MOODS) {
-  const b = document.createElement('button'); b.type = 'button'; b.textContent = m; b.title = name; b.setAttribute('aria-label', name);
-  b.onclick = () => { moodSel = moodSel === m ? null : m; paintMoods(); };
-  $('f-moods').append(b);
+const FIELD_KEYS = ['profit', 'steps', 'mood', 'moodScore', 'moodNote', 'gym', 'gymNote'];
+const moodEmoji = n => n >= 9 ? '😄' : n >= 7 ? '🙂' : n >= 5 ? '😐' : n >= 3 ? '😔' : '😣';
+let moodSel = null, legacyMood = null;
+const menu = $('f-mood-menu'), mbtn = $('f-mood-btn');
+for (let n = 1; n <= 10; n++) {
+  const li = document.createElement('li'); li.setAttribute('role', 'option'); li.dataset.n = n;
+  const t = document.createElement('span'); t.textContent = moodEmoji(n) + ' ' + n;
+  const ck = document.createElement('span'); ck.className = 'ck'; ck.textContent = '✓';
+  li.append(t, ck);
+  li.onclick = ev => { ev.stopPropagation(); moodSel = moodSel === n ? null : n; paintMoods(); toggleMenu(false); };
+  menu.append(li);
 }
-function paintMoods() { for (const b of $('f-moods').children) b.classList.toggle('on', b.textContent === moodSel); }
+function toggleMenu(open) {
+  menu.classList.toggle('open', open); mbtn.setAttribute('aria-expanded', open);
+  if (open) { const sel = menu.querySelector('[aria-selected=true]'); if (sel) sel.scrollIntoView({ block: 'nearest' }); }
+}
+mbtn.onclick = ev => { ev.stopPropagation(); toggleMenu(!menu.classList.contains('open')); };
+document.addEventListener('pointerdown', ev => { if (menu.classList.contains('open') && !ev.target.closest('.dd')) toggleMenu(false); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') toggleMenu(false); });
+function paintMoods() {
+  mbtn.textContent = moodSel ? moodEmoji(moodSel) + ' ' + moodSel + '/10' : (legacyMood || '—');
+  for (const li of menu.children) li.setAttribute('aria-selected', String(+li.dataset.n === moodSel));
+}
 function fillFields(e) {
   e = e || {};
   $('f-profit').value = e.profit ?? ''; $('f-steps').value = e.steps ?? '';
-  moodSel = e.mood || null; paintMoods(); $('f-mood-note').value = e.moodNote || '';
+  moodSel = Number.isInteger(e.moodScore) ? e.moodScore : null; legacyMood = e.mood || null; toggleMenu(false); paintMoods(); $('f-mood-note').value = e.moodNote || '';
   $('f-gym').checked = !!e.gym; $('f-gym-note').value = e.gymNote || ''; $('f-gym-note').classList.toggle('hidden', !e.gym);
   const today = editDate === todayStr();
   $('f-profit-fetch').classList.toggle('hidden', !today);
@@ -325,7 +339,7 @@ function readFields() {
   const f = {}, pr = parseFloat($('f-profit').value), st = parseInt($('f-steps').value, 10);
   if (Number.isFinite(pr)) f.profit = Math.round(pr * 100) / 100;
   if (Number.isFinite(st) && st >= 0) f.steps = st;
-  if (moodSel) f.mood = moodSel;
+  if (moodSel) f.moodScore = moodSel; else if (legacyMood) f.mood = legacyMood;
   const mn = $('f-mood-note').value.trim(); if (mn) f.moodNote = mn;
   if ($('f-gym').checked) { f.gym = true; const gn = $('f-gym-note').value.trim(); if (gn) f.gymNote = gn; }
   return f;
@@ -367,7 +381,8 @@ function badges(e) {
   const out = [];
   if (e.profit != null) out.push([usd(e.profit), cls(e.profit)]);
   if (e.steps != null) out.push(['👣 ' + e.steps.toLocaleString('uk-UA'), '']);
-  if (e.mood) out.push([e.mood + (e.moodNote ? ' ' + e.moodNote.slice(0, 30) : ''), '']);
+  const mf = Number.isInteger(e.moodScore) ? moodEmoji(e.moodScore) + ' ' + e.moodScore + '/10' : e.mood;
+  if (mf || e.moodNote) out.push([(mf || '🙂') + (e.moodNote ? ' ' + e.moodNote.slice(0, 30) : ''), '']);
   if (e.gym) out.push(['🏋️ ' + (e.gymNote ? e.gymNote.slice(0, 30) : 'Зал'), '']);
   if (!out.length) return null;
   const d = document.createElement('div'); d.className = 'badges';

@@ -71,7 +71,10 @@
       <div class="frow"><span class="flabel">👣 Кроки</span>
         <input id="f-steps" type="number" min="0" step="1" inputmode="numeric" placeholder="—"></div>
       <div class="frow col"><span class="flabel">🙂 Настрій</span>
-        <div id="f-moods" class="moods"></div>
+        <div class="dd">
+          <button id="f-mood-btn" type="button" class="ddbtn" aria-haspopup="listbox" aria-expanded="false">—</button>
+          <ul id="f-mood-menu" class="ddmenu" role="listbox" aria-label="Настрій від 1 до 10"></ul>
+        </div>
         <input id="f-mood-note" placeholder="Коротко про емоції (необовʼязково)" maxlength="140"></div>
       <div class="frow"><span class="flabel">🏋️ Спортзал</span>
         <label class="switch"><input id="f-gym" type="checkbox"><span></span></label></div>
