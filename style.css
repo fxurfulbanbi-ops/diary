@@ -104,7 +104,7 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
 .witem.center{font-weight:600}
 @media (hover:hover){.witem:hover{color:var(--red)}}
 .tgroup{margin-bottom:10px}
-.tlabel{display:block;margin:6px 4px 6px;font-size:14px;color:var(--muted)}
+.tlabel{display:block;margin:14px 4px 8px;font-size:20px;font-weight:700;letter-spacing:-.3px;line-height:1.25;color:var(--fg)}
 .prevq{display:block;font-size:12px;color:var(--muted);margin-top:6px}
 /* profit tint */
 :root{--green:#34C759}
