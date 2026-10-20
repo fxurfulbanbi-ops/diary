@@ -1,4 +1,12 @@
 'use strict';
+// Якщо після оновлення сайту браузер змішав старі й нові файли — показуємо кнопку перезавантаження
+window.addEventListener('error', () => {
+  if (document.getElementById('boot-err')) return;
+  const d = document.createElement('div'); d.id = 'boot-err';
+  d.textContent = 'Сайт оновився. Натисніть, щоб перезавантажити.';
+  d.onclick = () => location.reload();
+  document.body.prepend(d);
+});
 // ==== Налаштування ====
 const OWNER = 'fxurfulbanbi-ops', REPO = 'diary-data', FILE = 'entries.json';
 const LOCK_MS = 5 * 60 * 1000; // автоблокування через 5 хв бездіяльності

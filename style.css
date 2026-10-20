@@ -96,3 +96,4 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
   border-top:.5px solid var(--sep);font-size:16px;cursor:pointer}
 .ddmenu li:first-child{border-top:0}.ddmenu li:active{background:var(--bg2);transform:none}
 .ddmenu li .ck{color:var(--red);font-weight:600;visibility:hidden}.ddmenu li[aria-selected=true] .ck{visibility:visible}
+#boot-err{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:99;background:#FF3B30;color:#fff;padding:12px 14px;border-radius:12px;text-align:center;font-weight:600;cursor:pointer}
