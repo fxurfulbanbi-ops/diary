@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com https://public-api.birdeye.so; style-src 'self'; script-src 'self'">
-<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=202610210007"></head>
+<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=202610210012"></head>
 <body>
 <section id="setup" class="card hidden">
   <h1>📔 Налаштування пристрою</h1>
@@ -71,10 +71,7 @@
       <div class="frow"><span class="flabel">👣 Кроки</span>
         <input id="f-steps" type="number" min="0" step="1" inputmode="numeric" placeholder="—"></div>
       <div class="frow col"><span class="flabel">🙂 Настрій</span>
-        <div class="dd">
-          <button id="f-mood-btn" type="button" class="ddbtn" aria-haspopup="listbox" aria-expanded="false">—</button>
-          <ul id="f-mood-menu" class="ddmenu" role="listbox" aria-label="Настрій від 1 до 10"></ul>
-        </div>
+        <button id="f-mood-btn" type="button" class="ddbtn" aria-haspopup="dialog">—</button>
         <input id="f-mood-note" placeholder="Коротко про емоції (необовʼязково)" maxlength="140"></div>
       <div class="frow"><span class="flabel">🏋️ Спортзал</span>
         <label class="switch"><input id="f-gym" type="checkbox"><span></span></label></div>
@@ -84,5 +81,12 @@
     <div class="sheetfoot"><span id="e-status" class="muted"></span><button id="e-del" class="tbtn danger">Видалити запис</button></div>
   </div>
 </div>
-<script src="crypto.js?v=202610210007"></script><script src="app.js?v=202610210007"></script>
+<div id="wheel" class="hidden" role="dialog" aria-label="Настрій від 1 до 10">
+  <div class="backdrop" id="w-backdrop"></div>
+  <div class="wpanel">
+    <div class="sheetbar"><button id="w-clear" class="tbtn">Очистити</button><b>Настрій</b><button id="w-done" class="tbtn strong">Готово</button></div>
+    <div class="wheelwrap"><div class="band"></div><div id="w-list" class="wlist" tabindex="0"></div></div>
+  </div>
+</div>
+<script src="crypto.js?v=202610210012"></script><script src="app.js?v=202610210012"></script>
 </body></html>

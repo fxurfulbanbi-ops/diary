@@ -83,17 +83,23 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
 .switch input:checked+span{background:#34C759}.switch input:checked+span::before{transform:translateX(20px)}
 .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .badge{font-size:13px;background:var(--card);border-radius:8px;padding:2px 8px}
-/* mood dropdown */
-.dd{position:relative}
+/* mood button + wheel picker */
 .ddbtn{background:var(--bg2);color:var(--fg);border-radius:8px;padding:6px 12px;font-size:16px;min-width:96px;text-align:right}
 .ddbtn::after{content:" ⌄";color:var(--muted)}
-.ddmenu{position:absolute;right:0;top:calc(100% + 6px);z-index:5;margin:0;padding:4px 0;min-width:180px;max-height:280px;overflow-y:auto;
-  background:var(--card);border-radius:13px;box-shadow:0 10px 40px rgba(0,0,0,.25),0 0 0 .5px var(--sep);
-  transform-origin:top right;transform:scale(.6);opacity:0;pointer-events:none;
-  transition:transform .28s cubic-bezier(.2,1.1,.3,1),opacity .2s ease}
-.ddmenu.open{transform:none;opacity:1;pointer-events:auto}
-.ddmenu li{display:flex;justify-content:space-between;align-items:center;margin:0;padding:10px 14px;border-radius:0;background:none;box-shadow:none;
-  border-top:.5px solid var(--sep);font-size:16px;cursor:pointer}
-.ddmenu li:first-child{border-top:0}.ddmenu li:active{background:var(--bg2);transform:none}
-.ddmenu li .ck{color:var(--red);font-weight:600;visibility:hidden}.ddmenu li[aria-selected=true] .ck{visibility:visible}
-#boot-err{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:99;background:#FF3B30;color:#fff;padding:12px 14px;border-radius:12px;text-align:center;font-weight:600;cursor:pointer}
+#wheel{position:fixed;inset:0;z-index:20}
+.wpanel{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:var(--bg2);border-radius:14px 14px 0 0;
+  padding:8px 16px max(20px,env(safe-area-inset-bottom));animation:up .42s cubic-bezier(.2,.9,.3,1)}
+@media (min-width:700px){.wpanel{bottom:auto;top:50%;border-radius:14px;animation:pop .32s cubic-bezier(.2,1.2,.3,1);transform:translateY(-50%)}}
+#wheel.closing .wpanel{animation:down .3s ease-in forwards}#wheel.closing .backdrop{animation:fade .3s reverse forwards}
+@media (min-width:700px){#wheel.closing .wpanel{animation:popout .22s ease-in forwards}}
+@keyframes pop{from{opacity:0;transform:translateY(-50%) scale(.85)}to{opacity:1;transform:translateY(-50%) scale(1)}}
+@keyframes popout{to{opacity:0;transform:translateY(-50%) scale(.9)}}
+.wheelwrap{position:relative;height:220px;perspective:600px;margin-top:6px;
+  -webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
+.band{position:absolute;left:0;right:0;top:88px;height:44px;border-radius:10px;background:rgba(120,120,128,.2);pointer-events:none}
+.wlist{position:relative;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;padding:88px 0;outline:none;overscroll-behavior:contain;transform-style:preserve-3d}
+.wlist::-webkit-scrollbar{display:none}
+.witem{height:44px;line-height:44px;text-align:center;font-size:22px;scroll-snap-align:center;cursor:pointer;user-select:none;
+  transition:color .15s,text-shadow .15s;will-change:transform,opacity;backface-visibility:hidden}
+.witem.center{font-weight:600}
+@media (hover:hover){.witem:hover{color:var(--red)}}

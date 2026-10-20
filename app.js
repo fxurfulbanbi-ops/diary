@@ -313,25 +313,48 @@ async function loadPnl() {
 const FIELD_KEYS = ['profit', 'steps', 'mood', 'moodScore', 'moodNote', 'gym', 'gymNote'];
 const moodEmoji = n => n >= 9 ? '😄' : n >= 7 ? '🙂' : n >= 5 ? '😐' : n >= 3 ? '😔' : '😣';
 let moodSel = null, legacyMood = null;
-const menu = $('f-mood-menu'), mbtn = $('f-mood-btn');
+// ==== Колесо вибору настрою (як у iOS) ====
+const mbtn = $('f-mood-btn'), wlist = $('w-list'), wheel = $('wheel'), ITEM_H = 44;
 for (let n = 1; n <= 10; n++) {
-  const li = document.createElement('li'); li.setAttribute('role', 'option'); li.dataset.n = n;
-  const t = document.createElement('span'); t.textContent = moodEmoji(n) + ' ' + n;
-  const ck = document.createElement('span'); ck.className = 'ck'; ck.textContent = '✓';
-  li.append(t, ck);
-  li.onclick = ev => { ev.stopPropagation(); moodSel = moodSel === n ? null : n; paintMoods(); toggleMenu(false); };
-  menu.append(li);
+  const d = document.createElement('div'); d.className = 'witem'; d.dataset.n = n; d.textContent = moodEmoji(n) + '  ' + n;
+  d.onclick = () => { if (wheelIdx() === n - 1) return wheelDone(); wlist.scrollTo({ top: (n - 1) * ITEM_H, behavior: reduced.matches ? 'auto' : 'smooth' }); };
+  wlist.append(d);
 }
-function toggleMenu(open) {
-  menu.classList.toggle('open', open); mbtn.setAttribute('aria-expanded', open);
-  if (open) { const sel = menu.querySelector('[aria-selected=true]'); if (sel) sel.scrollIntoView({ block: 'nearest' }); }
+const wheelIdx = () => Math.max(0, Math.min(9, Math.round(wlist.scrollTop / ITEM_H)));
+let wheelRaf = 0;
+function paintWheel() {
+  wheelRaf = 0;
+  const mid = wlist.scrollTop / ITEM_H, ci = wheelIdx();
+  for (const it of wlist.children) {
+    const d = (+it.dataset.n - 1) - mid, ad = Math.min(Math.abs(d), 3);
+    it.style.transform = `rotateX(${(-d * 22).toFixed(1)}deg) scale(${(1 - ad * 0.08).toFixed(3)})`;
+    it.style.opacity = (1 - ad * 0.28).toFixed(2);
+    it.classList.toggle('center', +it.dataset.n - 1 === ci);
+  }
 }
-mbtn.onclick = ev => { ev.stopPropagation(); toggleMenu(!menu.classList.contains('open')); };
-document.addEventListener('pointerdown', ev => { if (menu.classList.contains('open') && !ev.target.closest('.dd')) toggleMenu(false); });
-document.addEventListener('keydown', ev => { if (ev.key === 'Escape') toggleMenu(false); });
+wlist.addEventListener('scroll', () => { if (!wheelRaf) wheelRaf = requestAnimationFrame(paintWheel); }, { passive: true });
+wlist.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); wlist.scrollTo({ top: (wheelIdx() + (e.key === 'ArrowDown' ? 1 : -1)) * ITEM_H, behavior: 'smooth' }); }
+  if (e.key === 'Enter') wheelDone();
+});
+function openWheel() {
+  wheel.classList.remove('hidden', 'closing');
+  wlist.scrollTop = ((moodSel || 5) - 1) * ITEM_H; paintWheel(); wlist.focus({ preventScroll: true });
+}
+function closeWheel() {
+  if (wheel.classList.contains('hidden')) return;
+  if (reduced.matches) return wheel.classList.add('hidden');
+  wheel.classList.add('closing'); setTimeout(() => wheel.classList.add('hidden'), 300);
+}
+function wheelDone() { moodSel = wheelIdx() + 1; paintMoods(); closeWheel(); }
+mbtn.onclick = ev => { ev.stopPropagation(); openWheel(); };
+$('w-done').onclick = wheelDone;
+$('w-clear').onclick = () => { moodSel = null; paintMoods(); closeWheel(); };
+$('w-backdrop').onclick = closeWheel;
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeWheel(); });
+function toggleMenu() { closeWheel(); }
 function paintMoods() {
   mbtn.textContent = moodSel ? moodEmoji(moodSel) + ' ' + moodSel + '/10' : (legacyMood || '—');
-  for (const li of menu.children) li.setAttribute('aria-selected', String(+li.dataset.n === moodSel));
 }
 function fillFields(e) {
   e = e || {};
