@@ -42,7 +42,9 @@ async function load() {
   sha = f.sha;
   entries = (await DiaryCrypto.decrypt(password, JSON.parse(b64d(f.content)))).entries || [];
 }
-async function save() {
+let saveChain = Promise.resolve();
+function save() { const p = saveChain.then(saveNow); saveChain = p.catch(() => {}); return p; }
+async function saveNow() {
   const box = await DiaryCrypto.encrypt(password, { entries });
   const r = await gh('PUT', { message: 'update', content: b64e(JSON.stringify(box)), ...(sha ? { sha } : {}) });
   sha = r.content.sha;
@@ -71,7 +73,7 @@ async function unlock() {
   try { await load(); } catch (e) { lock(); return $('u-msg').textContent = e.name === 'OperationError' ? 'Не вдалося розшифрувати записи.' : e.message; }
   $('u-pass').value = ''; $('u-msg').textContent = ''; opened();
 }
-function opened() { view = new Date(); view.setDate(1); selected = todayStr(); renderCal(0); show('cal'); poke(); }
+function opened() { view = new Date(); view.setDate(1); selected = todayStr(); renderCal(0); show('cal'); poke(); autoProfit(); }
 function lock() {
   password = token = current = null; entries = []; sha = null; clearTimeout(lockTimer);
   $('sheet').classList.add('hidden'); pnlReset(); $('e-text').value = $('e-title').value = '';
@@ -142,6 +144,7 @@ function openSheet(ds) {
   $('e-title').value = current ? current.title : ''; $('e-text').value = current ? current.text : '';
   fillFields(current); $('e-del').classList.toggle('hidden', !current); $('e-status').textContent = '';
   const s = $('sheet'); s.classList.remove('hidden', 'closing');
+  if (ds === todayStr()) autoProfit();
   if (!current) setTimeout(() => $('e-text').focus(), reduced.matches ? 0 : 380);
 }
 function closeSheet() {
@@ -157,6 +160,7 @@ async function persist(fn, ok) {
   catch (err) { entries = JSON.parse(backup); $('e-status').textContent = err.message; return false; }
 }
 $('e-save').onclick = async () => {
+  if (!current) current = byDate(editDate) || null;
   const title = $('e-title').value.trim(), text = $('e-text').value, f = readFields();
   if (!current && !title && !text.trim() && !Object.keys(f).length) return closeSheet();
   const now = new Date().toISOString();
@@ -164,7 +168,7 @@ $('e-save').onclick = async () => {
     const e = current ? entries.find(x => x.id === current.id) : { id: crypto.randomUUID(), date: editDate, created: now };
     for (const k of FIELD_KEYS) delete e[k];
     Object.assign(e, { title, text, updated: now }, f);
-    if (!current) entries.push(e);
+    if (!entries.includes(e)) entries.push(e);
     current = e;
   }, 'Збережено ✓');
   if (okSaved) { renderCal(0); renderList(); closeSheet(); }
@@ -273,7 +277,7 @@ async function loadPnl() {
     const sum = res.reduce((a, d) => ({ realized: a.realized + d.realized, unrealized: a.unrealized + d.unrealized, total: a.total + d.total }), { realized: 0, unrealized: 0, total: 0 });
     const frag = document.createDocumentFragment();
     res.forEach((d, i) => frag.append(pnlRow(short(WALLETS[i]), d)));
-    frag.append(pnlRow('Разом', sum, true));
+    frag.append(pnlRow('Разом', sum, true)); storeTodayProfit(sum.total);
     const upd = document.createElement('p'); upd.className = 'muted'; upd.textContent = 'Оновлено о ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
     frag.append(upd); $('p-body').replaceChildren(frag);
   } catch (e) { if (password) { pnlMsg(e.message); if (e.badKey) { beKey = null; showKeyForm(); } } }
@@ -297,7 +301,7 @@ function fillFields(e) {
   $('f-gym').checked = !!e.gym; $('f-gym-note').value = e.gymNote || ''; $('f-gym-note').classList.toggle('hidden', !e.gym);
   const today = editDate === todayStr();
   $('f-profit-fetch').classList.toggle('hidden', !today);
-  $('f-profit-hint').textContent = today ? '' : 'Для минулих днів введіть вручну (безкоштовний Birdeye дає лише останні 24 год).';
+  $('f-profit-hint').textContent = today ? (e.profitAt ? 'Оновлено автоматично о ' + new Date(e.profitAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) + '.' : '') : 'Для минулих днів введіть вручну (безкоштовний Birdeye дає лише останні 24 год).';
 }
 $('f-gym').onchange = () => $('f-gym-note').classList.toggle('hidden', !$('f-gym').checked);
 function readFields() {
@@ -309,18 +313,39 @@ function readFields() {
   if ($('f-gym').checked) { f.gym = true; const gn = $('f-gym-note').value.trim(); if (gn) f.gymNote = gn; }
   return f;
 }
-$('f-profit-fetch').onclick = async () => {
-  const key = await getKey();
-  if (!key) { $('f-profit-hint').textContent = 'Спочатку додайте ключ Birdeye у картці «Прибуток за 24 год».'; return; }
-  const btn = $('f-profit-fetch'); btn.disabled = true; $('f-profit-hint').textContent = 'Завантажую з Birdeye…';
-  try {
+$('f-profit-fetch').onclick = () => autoProfit(true);
+// Автоматичний прибуток за сьогодні: сума 24h по обох гаманцях, зберігається в зашифрований запис.
+const PROFIT_TTL = 10 * 60 * 1000;
+let profitJob = null, profitFailAt = 0;
+function hint(t) { if (editDate === todayStr() && !$('sheet').classList.contains('hidden')) $('f-profit-hint').textContent = t; }
+async function autoProfit(force) {
+  if (!password || profitJob) return profitJob;
+  const d = todayStr(), e0 = byDate(d);
+  if (!force && e0 && e0.profitAt && Date.now() - Date.parse(e0.profitAt) < PROFIT_TTL) return;
+  if (!force && Date.now() - profitFailAt < PROFIT_TTL) return;
+  profitJob = (async () => {
+    const key = await getKey();
+    if (!key) { hint('Додайте ключ Birdeye у картці «Прибуток за 24 год» — тоді прибуток заповнюватиметься сам.'); return; }
+    hint('Завантажую прибуток з Birdeye…'); $('f-profit-fetch').disabled = true;
     let sum = 0;
-    for (let i = 0; i < WALLETS.length; i++) { if (i) await sleep(1100); sum += (await fetchPnl(WALLETS[i], key)).total; }
-    $('f-profit').value = sum.toFixed(2);
-    $('f-profit-hint').textContent = 'Сума за останні 24 год по обох гаманцях. Натисніть «Готово», щоб зберегти.';
-  } catch (e) { $('f-profit-hint').textContent = e.message; }
-  finally { btn.disabled = false; }
-};
+    try { for (let i = 0; i < WALLETS.length; i++) { if (i) await sleep(1100); sum += (await fetchPnl(WALLETS[i], key)).total; } }
+    catch (err) { profitFailAt = Date.now(); hint(err.message); return; }
+    await storeTodayProfit(sum);
+  })().finally(() => { profitJob = null; $('f-profit-fetch').disabled = false; });
+  return profitJob;
+}
+async function storeTodayProfit(sum) {
+  if (!password) return;
+  const d = todayStr(), now = new Date().toISOString(), val = Math.round(sum * 100) / 100;
+  const backup = JSON.stringify(entries);
+  let e = byDate(d);
+  if (!e) { e = { id: crypto.randomUUID(), date: d, created: now, title: '', text: '', updated: now }; entries.push(e); }
+  Object.assign(e, { profit: val, profitAt: now });
+  if (editDate === d && !$('sheet').classList.contains('hidden')) { $('f-profit').value = val.toFixed(2); if (!current) current = e; }
+  try { await save(); hint('Оновлено автоматично о ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) + ' (24 год, обидва гаманці).'); }
+  catch (err) { entries = JSON.parse(backup); if (current && !entries.find(x => x.id === current.id)) current = null; hint(err.message); return; }
+  if (!$('cal').classList.contains('hidden')) renderCal(0);
+}
 function badges(e) {
   const out = [];
   if (e.profit != null) out.push([usd(e.profit), cls(e.profit)]);
