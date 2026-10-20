@@ -1,7 +1,10 @@
 <!doctype html>
 <html lang="uk"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com; style-src 'self'; script-src 'self'">
 <title>Щоденник</title><link rel="stylesheet" href="style.css"></head>
 <body>
@@ -11,28 +14,48 @@
   <label>GitHub-токен<input id="s-token" type="password" autocomplete="off" placeholder="github_pat_..."></label>
   <label>Пароль щоденника<input id="s-pass" type="password" autocomplete="new-password"></label>
   <label>Повторіть пароль<input id="s-pass2" type="password" autocomplete="new-password"></label>
-  <button id="s-go">Зберегти й відкрити</button>
+  <button id="s-go" class="btn">Зберегти й відкрити</button>
   <p id="s-msg" class="msg"></p>
 </section>
 <section id="unlock" class="card hidden">
   <h1>📔 Щоденник</h1>
   <label>Пароль<input id="u-pass" type="password" autocomplete="current-password"></label>
-  <button id="u-go">Відкрити</button>
+  <button id="u-go" class="btn">Відкрити</button>
   <button id="u-reset" class="link">Забути цей пристрій</button>
   <p id="u-msg" class="msg"></p>
 </section>
+
+<section id="cal" class="hidden">
+  <div class="topbar">
+    <button id="c-today" class="tbtn">Сьогодні</button>
+    <div><button id="c-list" class="tbtn" aria-label="Пошук">🔍</button><button id="c-lock" class="tbtn" aria-label="Заблокувати">🔒</button></div>
+  </div>
+  <div class="monthbar">
+    <h1 id="c-title"></h1>
+    <div><button id="c-prev" class="arrow" aria-label="Попередній місяць">‹</button><button id="c-next" class="arrow" aria-label="Наступний місяць">›</button></div>
+  </div>
+  <div class="weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span class="we">Сб</span><span class="we">Нд</span></div>
+  <div id="c-viewport"><div id="c-grid" class="grid"></div></div>
+  <div id="c-preview"></div>
+  <p id="c-msg" class="msg"></p>
+</section>
+
 <section id="list" class="hidden">
-  <header><h1>📔 Мої записи</h1><div><button id="l-new">+ Новий</button> <button id="l-lock" class="sec">🔒</button></div></header>
-  <input id="l-search" type="search" placeholder="Пошук…">
+  <div class="topbar"><button id="l-back" class="tbtn">‹ Календар</button></div>
+  <h1 class="big">Записи</h1>
+  <input id="l-search" type="search" placeholder="Пошук">
   <ul id="entries"></ul>
-  <p id="l-msg" class="msg"></p>
 </section>
-<section id="editor" class="hidden">
-  <header><button id="e-back" class="sec">← Назад</button><span id="e-status" class="muted"></span></header>
-  <input id="e-date" type="date">
-  <input id="e-title" placeholder="Заголовок">
-  <textarea id="e-text" placeholder="Що сьогодні сталося?"></textarea>
-  <div class="row"><button id="e-save">Зберегти</button><button id="e-del" class="danger">Видалити</button></div>
-</section>
+
+<div id="sheet" class="hidden" aria-modal="true" role="dialog">
+  <div class="backdrop" id="sh-backdrop"></div>
+  <div class="panel">
+    <div class="grabber"></div>
+    <div class="sheetbar"><button id="e-cancel" class="tbtn">Скасувати</button><b id="e-date"></b><button id="e-save" class="tbtn strong">Готово</button></div>
+    <input id="e-title" placeholder="Заголовок">
+    <textarea id="e-text" placeholder="Що сьогодні сталося?"></textarea>
+    <div class="sheetfoot"><span id="e-status" class="muted"></span><button id="e-del" class="tbtn danger">Видалити запис</button></div>
+  </div>
+</div>
 <script src="crypto.js"></script><script src="app.js"></script>
 </body></html>
