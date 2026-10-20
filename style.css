@@ -181,3 +181,5 @@ input:focus,textarea:focus{box-shadow:0 0 0 2px #8a5a3b,0 0 0 4px rgba(203,183,1
 .ring .rfg{stroke:#FF7A3D;stroke-dasharray:113.1;stroke-dashoffset:113.1;transition:stroke-dashoffset .8s cubic-bezier(.2,.9,.3,1),stroke .3s}
 .stepscard.up .sc-input:not(:focus){color:var(--green)}.stepscard.up .ring .rfg{stroke:var(--green)}.stepscard.up .sc-pct{color:var(--green)}
 .stepscard.down .sc-input:not(:focus){color:#FF8A6B}.stepscard.down .ring .rfg{stroke:#FF6A4D}
+.pval{min-width:96px;text-align:right;font:600 17px var(--sys);color:var(--fg);padding:6px 8px;border-radius:8px;transition:color .2s,background .2s}
+.trow.up .pval{color:var(--green);background:rgba(61,220,110,.16)}.trow.down .pval{color:var(--red);background:rgba(255,90,78,.17)}

@@ -318,7 +318,7 @@ async function loadPnl() {
 }
 
 // ==== Поля дня: прибуток, кроки, настрій, спортзал ====
-const FIELD_KEYS = ['profit', 'steps', 'mood', 'moodScore', 'moodNote', 'gym', 'gymNote'];
+const FIELD_KEYS = ['steps', 'mood', 'moodScore', 'moodNote', 'gym', 'gymNote'];
 const moodEmoji = n => n >= 9 ? '😄' : n >= 7 ? '🙂' : n >= 5 ? '😐' : n >= 3 ? '😔' : '😣';
 let moodSel = null, legacyMood = null;
 // ==== Колесо вибору настрою (як у iOS) ====
@@ -366,26 +366,24 @@ function paintMoods() {
 }
 function fillFields(e) {
   e = e || {};
-  $('f-profit').value = e.profit ?? ''; tintProfit(); $('f-steps').value = e.steps ?? ''; tintSteps();
+  setProfit(typeof e.profit === 'number' ? e.profit : null); $('f-steps').value = e.steps ?? ''; tintSteps();
   moodSel = Number.isInteger(e.moodScore) ? e.moodScore : null; legacyMood = e.mood || null; toggleMenu(false); paintMoods(); $('f-mood-note').value = e.moodNote || '';
   $('f-gym').checked = !!e.gym; $('f-gym-note').value = e.gymNote || ''; $('f-gym-note').classList.toggle('hidden', !e.gym);
   const today = editDate === todayStr();
   $('f-profit-fetch').classList.toggle('hidden', !today);
-  $('f-profit-hint').textContent = today ? (e.profitAt ? 'Оновлено автоматично о ' + new Date(e.profitAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) + '.' : '') : 'Для минулих днів введіть вручну (безкоштовний Birdeye дає лише останні 24 год).';
+  $('f-profit-hint').textContent = today ? (e.profitAt ? 'Оновлено автоматично о ' + new Date(e.profitAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) + '.' : '') : (typeof e.profit === 'number' ? 'Збережено з Birdeye.' : 'Немає даних з Birdeye');
 }
 $('f-gym').onchange = () => $('f-gym-note').classList.toggle('hidden', !$('f-gym').checked);
 function tintProfit() {
-  const v = parseFloat($('f-profit').value), row = $('f-profit-row');
+  const v = parseFloat($('f-profit').dataset.v), row = $('f-profit-row');
   row.classList.toggle('up', v > 0); row.classList.toggle('down', v < 0);
 }
-$('f-profit').addEventListener('input', e => {
-  const el = e.target, v = el.value;
-  let s = v.replace(/,/g, '.').replace(/[^0-9.\-]/g, '');
-  s = (s.startsWith('-') ? '-' : '') + s.replace(/-/g, '');
-  const i = s.indexOf('.'); if (i !== -1) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, '');
-  if (s !== v) el.value = s;
+// Прибуток лише для показу: заповнюється тільки з Birdeye
+function setProfit(v) {
+  const el = $('f-profit');
+  el.dataset.v = v == null ? '' : v; el.textContent = v == null ? '—' : usd(v);
   tintProfit();
-});
+}
 const STEPS_GOAL = 15000;
 function tintSteps() {
   const raw = $('f-steps').value.trim(), v = parseInt(raw, 10), row = $('f-steps-row');
@@ -401,8 +399,7 @@ $('f-steps').addEventListener('input', e => {
   tintSteps();
 });
 function readFields() {
-  const f = {}, pr = parseFloat($('f-profit').value), st = parseInt($('f-steps').value, 10);
-  if (Number.isFinite(pr)) f.profit = Math.round(pr * 100) / 100;
+  const f = {}, st = parseInt($('f-steps').value, 10);
   if (Number.isFinite(st) && st >= 0) f.steps = st;
   if (moodSel) f.moodScore = moodSel; else if (legacyMood) f.mood = legacyMood;
   const mn = $('f-mood-note').value.trim(); if (mn) f.moodNote = mn;
@@ -437,7 +434,7 @@ async function storeTodayProfit(sum) {
   let e = byDate(d);
   if (!e) { e = { id: crypto.randomUUID(), date: d, created: now, title: '', learned: '', improve: '', notes: '', updated: now }; entries.push(e); }
   Object.assign(e, { profit: val, profitAt: now });
-  if (editDate === d && !$('sheet').classList.contains('hidden')) { $('f-profit').value = val.toFixed(2); tintProfit(); if (!current) current = e; }
+  if (editDate === d && !$('sheet').classList.contains('hidden')) { setProfit(val); if (!current) current = e; }
   try { await save(); hint('Оновлено автоматично о ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) + ' (24 год, обидва гаманці).'); }
   catch (err) { entries = JSON.parse(backup); if (current && !entries.find(x => x.id === current.id)) current = null; hint(err.message); return; }
   if (!$('cal').classList.contains('hidden')) renderCal(0);

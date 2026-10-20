@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#301f17">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com https://public-api.birdeye.so; style-src 'self'; script-src 'self'; font-src 'self'">
-<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="preload" href="fonts/michroma-latin.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/unbounded-cyrillic.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="style.css?v=20261021005229"></head>
+<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="preload" href="fonts/michroma-latin.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/unbounded-cyrillic.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="style.css?v=20261021005500"></head>
 <body>
 <section id="setup" class="card hidden">
   <h1>📔 Налаштування пристрою</h1>
@@ -64,7 +64,7 @@
     <input id="e-title" placeholder="Заголовок">
     <div class="fields">
       <div id="f-profit-row" class="frow trow"><span class="flabel">💰 Прибуток, $</span>
-        <input id="f-profit" class="num" type="text" inputmode="decimal" autocomplete="off" placeholder="—">
+        <output id="f-profit" class="pval" aria-live="polite">—</output>
         <button id="f-profit-fetch" class="tbtn small" aria-label="Оновити з Birdeye">↻</button></div>
       <p id="f-profit-hint" class="fhint muted"></p>
       <div id="f-steps-row" class="stepscard">
@@ -102,5 +102,5 @@
     <div class="wheelwrap"><div class="band"></div><div id="w-list" class="wlist" tabindex="0"></div></div>
   </div>
 </div>
-<script src="crypto.js?v=20261021005229"></script><script src="app.js?v=20261021005229"></script>
+<script src="crypto.js?v=20261021005500"></script><script src="app.js?v=20261021005500"></script>
 </body></html>
