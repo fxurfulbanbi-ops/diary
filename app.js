@@ -74,7 +74,7 @@ async function unlock() {
 function opened() { view = new Date(); view.setDate(1); selected = todayStr(); renderCal(0); show('cal'); poke(); }
 function lock() {
   password = token = current = null; entries = []; sha = null; clearTimeout(lockTimer);
-  $('sheet').classList.add('hidden'); $('e-text').value = $('e-title').value = '';
+  $('sheet').classList.add('hidden'); pnlReset(); $('e-text').value = $('e-title').value = '';
   $('entries').innerHTML = ''; $('c-grid').innerHTML = ''; $('c-preview').innerHTML = '';
   start();
 }
@@ -196,6 +196,85 @@ $('l-search').oninput = renderList;
 $('s-go').onclick = setup; $('u-go').onclick = unlock;
 $('u-pass').onkeydown = e => { if (e.key === 'Enter') unlock(); };
 $('u-reset').onclick = () => { if (confirm('Видалити збережений токен з цього пристрою? Записи на GitHub залишаться.')) { localStorage.removeItem(LS_KEY); start(); } };
+
+// ==== Прибуток за 24 год (Birdeye) ====
+const BE_KEY = 'diary.birdeye.v1';
+const WALLETS = ['GR7Jcg1NLz9JGWYJoap9gNqJLeLvZtKbaHjuk1ryz5Tk', '4euC2CXnrRcTFw4PEYrGvYUr2pd4vD9aqVrvJwYtPXmf'];
+let beKey = null, pnlBusy = false;
+const short = a => a.slice(0, 4) + '…' + a.slice(-4);
+const usd = n => (n > 0 ? '+' : n < 0 ? '−' : '') + '$' + Math.abs(n).toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const cls = n => n > 0 ? 'pos' : n < 0 ? 'neg' : '';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function pnlReset() { beKey = null; $('p-keyform').classList.add('hidden'); $('p-keyinput').value = '';
+  $('p-body').innerHTML = '<p class="muted">Натисніть ↻, щоб завантажити.</p>'; }
+function pnlMsg(t) { const p = document.createElement('p'); p.className = 'msg'; p.textContent = t; $('p-body').replaceChildren(p); }
+async function getKey() {
+  if (beKey) return beKey;
+  const raw = localStorage.getItem(BE_KEY); if (!raw) return null;
+  try { beKey = (await DiaryCrypto.decrypt(password, JSON.parse(raw))).key; } catch { localStorage.removeItem(BE_KEY); return null; }
+  return beKey;
+}
+function showKeyForm() { $('p-keyform').classList.remove('hidden'); $('p-keyforget').classList.toggle('hidden', !localStorage.getItem(BE_KEY)); $('p-keyinput').focus(); }
+$('p-key').onclick = () => $('p-keyform').classList.contains('hidden') ? showKeyForm() : $('p-keyform').classList.add('hidden');
+$('p-keysave').onclick = async () => {
+  const k = $('p-keyinput').value.trim(); if (!k || !password) return;
+  localStorage.setItem(BE_KEY, JSON.stringify(await DiaryCrypto.encrypt(password, { key: k })));
+  beKey = k; $('p-keyinput').value = ''; $('p-keyform').classList.add('hidden'); loadPnl();
+};
+$('p-keyforget').onclick = () => { if (!confirm('Видалити ключ Birdeye з цього пристрою?')) return;
+  localStorage.removeItem(BE_KEY); beKey = null; $('p-keyform').classList.add('hidden'); pnlReset(); };
+$('p-refresh').onclick = () => loadPnl();
+// Шукаємо поле pnl у відповіді незалежно від точної вкладеності
+function findPnl(o, depth = 0) {
+  if (!o || typeof o !== 'object' || depth > 5) return null;
+  if ('realized_profit_usd' in o || 'unrealized_usd' in o || 'total_usd' in o) return o;
+  for (const v of Object.values(o)) { const r = findPnl(v, depth + 1); if (r) return r; }
+  return null;
+}
+const num = v => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+async function fetchPnl(wallet, key) {
+  const url = `https://public-api.birdeye.so/wallet/v2/pnl/summary?wallet=${wallet}&duration=24h`;
+  let r;
+  try { r = await fetch(url, { headers: { 'x-api-key': key, 'x-chain': 'solana', accept: 'application/json' }, cache: 'no-store' }); }
+  catch { throw new Error('Немає звʼязку з Birdeye. Перевірте інтернет.'); }
+  if (r.status === 401 || r.status === 403) { const e = new Error('Невірний або неактивний ключ Birdeye (або тариф не дає доступу).'); e.badKey = true; throw e; }
+  if (r.status === 429) throw new Error('Забагато запитів до Birdeye. Спробуйте за хвилину.');
+  if (!r.ok) throw new Error('Помилка Birdeye: ' + r.status);
+  let j; try { j = await r.json(); } catch { throw new Error('Birdeye повернув незрозумілу відповідь.'); }
+  if (j && j.success === false) throw new Error('Birdeye: ' + (j.message || 'помилка'));
+  const p = findPnl(j && j.data !== undefined ? j.data : j);
+  if (!p) throw new Error('Не вдалося знайти дані PnL у відповіді.');
+  const realized = num(p.realized_profit_usd), unrealized = num(p.unrealized_usd);
+  return { realized, unrealized, total: p.total_usd != null ? num(p.total_usd) : realized + unrealized };
+}
+function pnlRow(label, d, total) {
+  const row = document.createElement('div'); row.className = 'prow' + (total ? ' total' : '');
+  const a = document.createElement('span'); a.className = 'addr'; a.textContent = label;
+  const t = document.createElement('span'); t.className = 'tot ' + cls(d.total); t.textContent = usd(d.total);
+  const s = document.createElement('span'); s.className = 'sub';
+  const r1 = document.createElement('span'); r1.className = cls(d.realized); r1.textContent = usd(d.realized);
+  const r2 = document.createElement('span'); r2.className = cls(d.unrealized); r2.textContent = usd(d.unrealized);
+  s.append('Реалізовано ', r1, ' · Нереалізовано ', r2);
+  row.append(a, t, s); return row;
+}
+async function loadPnl() {
+  if (pnlBusy || !password) return;
+  const key = await getKey();
+  if (!key) return showKeyForm();
+  pnlBusy = true; const sp = document.createElement('div'); sp.className = 'spinner'; $('p-body').replaceChildren(sp);
+  try {
+    const res = [];
+    for (let i = 0; i < WALLETS.length; i++) { if (i) await sleep(1100); res.push(await fetchPnl(WALLETS[i], key)); }
+    if (!password) return;
+    const sum = res.reduce((a, d) => ({ realized: a.realized + d.realized, unrealized: a.unrealized + d.unrealized, total: a.total + d.total }), { realized: 0, unrealized: 0, total: 0 });
+    const frag = document.createDocumentFragment();
+    res.forEach((d, i) => frag.append(pnlRow(short(WALLETS[i]), d)));
+    frag.append(pnlRow('Разом', sum, true));
+    const upd = document.createElement('p'); upd.className = 'muted'; upd.textContent = 'Оновлено о ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+    frag.append(upd); $('p-body').replaceChildren(frag);
+  } catch (e) { if (password) { pnlMsg(e.message); if (e.badKey) { beKey = null; showKeyForm(); } } }
+  finally { pnlBusy = false; }
+}
 
 function start() { show(localStorage.getItem(LS_KEY) ? 'unlock' : 'setup'); }
 start();

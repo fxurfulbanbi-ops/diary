@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com; style-src 'self'; script-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com https://public-api.birdeye.so; style-src 'self'; script-src 'self'">
 <title>Щоденник</title><link rel="stylesheet" href="style.css"></head>
 <body>
 <section id="setup" class="card hidden">
@@ -37,6 +37,16 @@
   <div class="weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span class="we">Сб</span><span class="we">Нд</span></div>
   <div id="c-viewport"><div id="c-grid" class="grid"></div></div>
   <div id="c-preview"></div>
+  <div id="pnl" class="pcard">
+    <div class="phead"><b>Прибуток за 24 год</b>
+      <div><button id="p-key" class="tbtn small">Ключ</button><button id="p-refresh" class="tbtn refresh" aria-label="Оновити">↻</button></div></div>
+    <div id="p-keyform" class="hidden">
+      <p class="muted">Ключ Birdeye API зберігається на цьому пристрої лише зашифрованим вашим паролем.</p>
+      <input id="p-keyinput" type="password" autocomplete="off" placeholder="Birdeye API key">
+      <div class="row"><button id="p-keyforget" class="tbtn danger small">Забути ключ</button><button id="p-keysave" class="tbtn strong">Зберегти</button></div>
+    </div>
+    <div id="p-body"><p class="muted">Натисніть ↻, щоб завантажити.</p></div>
+  </div>
   <p id="c-msg" class="msg"></p>
 </section>
 
