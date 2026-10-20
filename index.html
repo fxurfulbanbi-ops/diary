@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com https://public-api.birdeye.so; style-src 'self'; script-src 'self'">
-<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=202610210020"></head>
+<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=202610210023"></head>
 <body>
 <section id="setup" class="card hidden">
   <h1>📔 Налаштування пристрою</h1>
@@ -64,11 +64,11 @@
     <div class="sheetbar"><button id="e-cancel" class="tbtn">Скасувати</button><b id="e-date"></b><button id="e-save" class="tbtn strong">Готово</button></div>
     <input id="e-title" placeholder="Заголовок">
     <div class="fields">
-      <div class="frow" id="f-profit-row"><span class="flabel">💰 Прибуток, $</span>
+      <div id="f-profit-row" class="frow trow"><span class="flabel">💰 Прибуток, $</span>
         <input id="f-profit" type="number" step="0.01" inputmode="decimal" placeholder="—">
         <button id="f-profit-fetch" class="tbtn small" aria-label="Оновити з Birdeye">↻</button></div>
       <p id="f-profit-hint" class="fhint muted"></p>
-      <div class="frow"><span class="flabel">👣 Кроки</span>
+      <div id="f-steps-row" class="frow trow"><span class="flabel">👣 Кроки</span>
         <input id="f-steps" type="number" min="0" step="1" inputmode="numeric" placeholder="—"></div>
       <div class="frow col"><span class="flabel">🙂 Настрій</span>
         <button id="f-mood-btn" type="button" class="ddbtn" aria-haspopup="dialog">—</button>
@@ -91,5 +91,5 @@
     <div class="wheelwrap"><div class="band"></div><div id="w-list" class="wlist" tabindex="0"></div></div>
   </div>
 </div>
-<script src="crypto.js?v=202610210020"></script><script src="app.js?v=202610210020"></script>
+<script src="crypto.js?v=202610210023"></script><script src="app.js?v=202610210023"></script>
 </body></html>

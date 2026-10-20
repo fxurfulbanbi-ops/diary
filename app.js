@@ -366,7 +366,7 @@ function paintMoods() {
 }
 function fillFields(e) {
   e = e || {};
-  $('f-profit').value = e.profit ?? ''; tintProfit(); $('f-steps').value = e.steps ?? '';
+  $('f-profit').value = e.profit ?? ''; tintProfit(); $('f-steps').value = e.steps ?? ''; tintSteps();
   moodSel = Number.isInteger(e.moodScore) ? e.moodScore : null; legacyMood = e.mood || null; toggleMenu(false); paintMoods(); $('f-mood-note').value = e.moodNote || '';
   $('f-gym').checked = !!e.gym; $('f-gym-note').value = e.gymNote || ''; $('f-gym-note').classList.toggle('hidden', !e.gym);
   const today = editDate === todayStr();
@@ -379,6 +379,13 @@ function tintProfit() {
   row.classList.toggle('up', v > 0); row.classList.toggle('down', v < 0);
 }
 $('f-profit').addEventListener('input', tintProfit);
+const STEPS_GOAL = 15000;
+function tintSteps() {
+  const raw = $('f-steps').value.trim(), v = parseInt(raw, 10), row = $('f-steps-row');
+  const ok = raw !== '' && Number.isFinite(v);
+  row.classList.toggle('up', ok && v >= STEPS_GOAL); row.classList.toggle('down', ok && v < STEPS_GOAL);
+}
+$('f-steps').addEventListener('input', tintSteps);
 function readFields() {
   const f = {}, pr = parseFloat($('f-profit').value), st = parseInt($('f-steps').value, 10);
   if (Number.isFinite(pr)) f.profit = Math.round(pr * 100) / 100;
@@ -424,7 +431,7 @@ async function storeTodayProfit(sum) {
 function badges(e) {
   const out = [];
   if (e.profit != null) out.push([usd(e.profit), cls(e.profit)]);
-  if (e.steps != null) out.push(['👣 ' + e.steps.toLocaleString('uk-UA'), '']);
+  if (e.steps != null) out.push(['👣 ' + e.steps.toLocaleString('uk-UA'), e.steps >= STEPS_GOAL ? 'pos' : 'neg']);
   const mf = Number.isInteger(e.moodScore) ? moodEmoji(e.moodScore) + ' ' + e.moodScore + '/10' : e.mood;
   if (mf || e.moodNote) out.push([(mf || '🙂') + (e.moodNote ? ' ' + e.moodNote.slice(0, 30) : ''), '']);
   if (e.gym) out.push(['🏋️ ' + (e.gymNote ? e.gymNote.slice(0, 30) : 'Зал'), '']);
