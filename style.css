@@ -1,3 +1,7 @@
+@font-face{font-family:"AM UI";src:url(fonts/michroma-latin.woff2?v=1) format("woff2");font-weight:100 900;font-display:swap;
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212}
+@font-face{font-family:"AM UI";src:url(fonts/unbounded-cyrillic.woff2?v=1) format("woff2");font-weight:100 900;font-display:swap;
+  unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
 :root{--red:#FF3B30;--bg:#fff;--bg2:#f2f2f7;--fg:#000;--muted:#8e8e93;--sep:#c6c6c8;--card:#fff;color-scheme:light dark}
 @media (prefers-color-scheme:dark){:root{--red:#FF453A;--bg:#000;--bg2:#1c1c1e;--fg:#fff;--muted:#8e8e93;--sep:#38383a;--card:#1c1c1e}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -121,3 +125,26 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
 .reflect .tgroup{margin-bottom:22px}
 .reflect .tgroup:last-child{margin-bottom:8px}
 .reflect textarea{border-radius:12px;padding:12px 14px;box-shadow:0 0 0 .5px var(--sep)}
+/* Aston-Martin-like UI font (Michroma for Latin, Unbounded for Cyrillic); user text stays in system font */
+:root{--sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;--ui:"AM UI",var(--sys)}
+body{font-family:var(--ui);font-size:15px;letter-spacing:.02em}
+input,textarea,#c-preview b,#c-preview p,li b,li .muted,.badge,#p-keyinput,.witem{font-family:var(--sys);letter-spacing:normal}
+#c-preview p .prevq{font-family:var(--ui);letter-spacing:.04em;font-size:10px}
+#c-title{font-size:24px;letter-spacing:.02em;font-weight:400}
+#c-title span{font-weight:600}
+.big{font-size:26px;font-weight:400}
+h1{font-size:18px;font-weight:400}
+.weekdays{font-size:10px;letter-spacing:.08em}
+.day{font-size:15px}.day .n{font-size:14px}
+.tbtn{font-size:13px;letter-spacing:.04em}.tbtn.strong{font-weight:600}
+.btn{font-size:14px;letter-spacing:.06em}
+.flabel{font-size:12.5px;letter-spacing:.03em}
+.tlabel{font-size:15px;font-weight:600;letter-spacing:.03em;line-height:1.4}
+.ddbtn{font-family:var(--sys)}
+.sheetbar b{font-size:13px;letter-spacing:.04em;font-weight:400}
+.phead b{font-size:13px;letter-spacing:.04em;font-weight:400}
+.prow{font-size:12px}.prow .tot{font-size:14px}.prow .sub{font-size:10.5px}
+.muted,.msg,.fhint{letter-spacing:.02em}
+label{font-size:12px;letter-spacing:.04em}
+.arrow{font-family:var(--sys)}
+#boot-err{font-size:13px}
