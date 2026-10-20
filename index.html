@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com; style-src 'self'; script-src 'self'">
+<title>Щоденник</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<section id="setup" class="card hidden">
+  <h1>📔 Налаштування пристрою</h1>
+  <p class="muted">Вводиться один раз на кожному пристрої. Токен буде збережено лише зашифрованим вашим паролем.</p>
+  <label>GitHub-токен<input id="s-token" type="password" autocomplete="off" placeholder="github_pat_..."></label>
+  <label>Пароль щоденника<input id="s-pass" type="password" autocomplete="new-password"></label>
+  <label>Повторіть пароль<input id="s-pass2" type="password" autocomplete="new-password"></label>
+  <button id="s-go">Зберегти й відкрити</button>
+  <p id="s-msg" class="msg"></p>
+</section>
+<section id="unlock" class="card hidden">
+  <h1>📔 Щоденник</h1>
+  <label>Пароль<input id="u-pass" type="password" autocomplete="current-password"></label>
+  <button id="u-go">Відкрити</button>
+  <button id="u-reset" class="link">Забути цей пристрій</button>
+  <p id="u-msg" class="msg"></p>
+</section>
+<section id="list" class="hidden">
+  <header><h1>📔 Мої записи</h1><div><button id="l-new">+ Новий</button> <button id="l-lock" class="sec">🔒</button></div></header>
+  <input id="l-search" type="search" placeholder="Пошук…">
+  <ul id="entries"></ul>
+  <p id="l-msg" class="msg"></p>
+</section>
+<section id="editor" class="hidden">
+  <header><button id="e-back" class="sec">← Назад</button><span id="e-status" class="muted"></span></header>
+  <input id="e-date" type="date">
+  <input id="e-title" placeholder="Заголовок">
+  <textarea id="e-text" placeholder="Що сьогодні сталося?"></textarea>
+  <div class="row"><button id="e-save">Зберегти</button><button id="e-del" class="danger">Видалити</button></div>
+</section>
+<script src="crypto.js"></script><script src="app.js"></script>
+</body></html>
