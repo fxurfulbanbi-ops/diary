@@ -116,3 +116,8 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
 .trow.down{background:rgba(255,59,48,.12)}.trow.down input{color:var(--red);font-weight:600;background:rgba(255,59,48,.14)}
 @media (prefers-color-scheme:dark){.trow.up{background:rgba(48,209,88,.16)}.trow.down{background:rgba(255,69,58,.16)}}
 .day.up .dot{background:var(--green)}.day.down .dot{background:var(--red)}
+/* reflection section */
+.reflect{margin-top:28px;padding-top:6px;border-top:.5px solid var(--sep)}
+.reflect .tgroup{margin-bottom:22px}
+.reflect .tgroup:last-child{margin-bottom:8px}
+.reflect textarea{border-radius:12px;padding:12px 14px;box-shadow:0 0 0 .5px var(--sep)}

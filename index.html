@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com https://public-api.birdeye.so; style-src 'self'; script-src 'self'">
-<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=202610210026"></head>
+<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=202610210028"></head>
 <body>
 <section id="setup" class="card hidden">
   <h1>📔 Налаштування пристрою</h1>
@@ -77,10 +77,14 @@
         <label class="switch"><input id="f-gym" type="checkbox"><span></span></label></div>
       <input id="f-gym-note" class="hidden" placeholder="Що тренували (необовʼязково)" maxlength="140">
     </div>
+    <div class="reflect">
     <div class="tgroup"><label class="tlabel" for="e-learned">What did i learn today?</label>
       <textarea id="e-learned" rows="4"></textarea></div>
     <div class="tgroup"><label class="tlabel" for="e-improve">What can i improve tomorrow?</label>
       <textarea id="e-improve" rows="4"></textarea></div>
+    <div class="tgroup"><label class="tlabel" for="e-notes">OTHER NOTES</label>
+      <textarea id="e-notes" rows="4"></textarea></div>
+    </div>
     <div class="sheetfoot"><span id="e-status" class="muted"></span><button id="e-del" class="tbtn danger">Видалити запис</button></div>
   </div>
 </div>
@@ -91,5 +95,5 @@
     <div class="wheelwrap"><div class="band"></div><div id="w-list" class="wlist" tabindex="0"></div></div>
   </div>
 </div>
-<script src="crypto.js?v=202610210026"></script><script src="app.js?v=202610210026"></script>
+<script src="crypto.js?v=202610210028"></script><script src="app.js?v=202610210028"></script>
 </body></html>

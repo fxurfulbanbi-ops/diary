@@ -87,7 +87,7 @@ async function unlock() {
 function opened() { view = new Date(); view.setDate(1); selected = todayStr(); renderCal(0); show('cal'); poke(); autoProfit(); }
 function lock() {
   password = token = current = null; entries = []; settings = {}; sha = null; clearTimeout(lockTimer);
-  $('sheet').classList.add('hidden'); pnlReset(); $('e-learned').value = $('e-improve').value = $('e-title').value = '';
+  $('sheet').classList.add('hidden'); pnlReset(); $('e-learned').value = $('e-improve').value = $('e-notes').value = $('e-title').value = '';
   $('entries').innerHTML = ''; $('c-grid').innerHTML = ''; $('c-preview').innerHTML = '';
   start();
 }
@@ -129,7 +129,7 @@ function preview() {
   h.className = 'muted'; h.textContent = human(selected);
   b.textContent = e ? (e.title || 'Без назви') : 'Немає запису';
   t.textContent = e ? '' : 'Натисніть на день, щоб написати.';
-  if (e) for (const [q, v] of [['What did i learn today?', learnedOf(e)], ['What can i improve tomorrow?', e.improve || '']]) {
+  if (e) for (const [q, v] of [['What did i learn today?', learnedOf(e)], ['What can i improve tomorrow?', e.improve || ''], ['OTHER NOTES', e.notes || '']]) {
     if (!v.trim()) continue;
     const l = document.createElement('span'); l.className = 'prevq'; l.textContent = q;
     t.append(l, v.length > 140 ? v.slice(0, 140) + '…' : v);
@@ -158,7 +158,7 @@ document.addEventListener('keydown', e => {
 function openSheet(ds) {
   editDate = ds; current = byDate(ds) || null;
   $('e-date').textContent = human(ds).replace(/^\S+, /, '');
-  $('e-title').value = current ? current.title : ''; $('e-learned').value = current ? learnedOf(current) : ''; $('e-improve').value = current ? (current.improve || '') : '';
+  $('e-title').value = current ? current.title : ''; $('e-learned').value = current ? learnedOf(current) : ''; $('e-improve').value = current ? (current.improve || '') : ''; $('e-notes').value = current ? (current.notes || '') : '';
   fillFields(current); $('e-del').classList.toggle('hidden', !current); $('e-status').textContent = '';
   const s = $('sheet'); s.classList.remove('hidden', 'closing');
   if (ds === todayStr()) autoProfit();
@@ -178,14 +178,14 @@ async function persist(fn, ok) {
 }
 $('e-save').onclick = async () => {
   if (!current) current = byDate(editDate) || null;
-  const title = $('e-title').value.trim(), learned = $('e-learned').value, improve = $('e-improve').value, f = readFields();
-  if (!current && !title && !learned.trim() && !improve.trim() && !Object.keys(f).length) return closeSheet();
+  const title = $('e-title').value.trim(), learned = $('e-learned').value, improve = $('e-improve').value, notes = $('e-notes').value, f = readFields();
+  if (!current && !title && !learned.trim() && !improve.trim() && !notes.trim() && !Object.keys(f).length) return closeSheet();
   const now = new Date().toISOString();
   const okSaved = await persist(() => {
     const e = current ? entries.find(x => x.id === current.id) : { id: crypto.randomUUID(), date: editDate, created: now };
     for (const k of FIELD_KEYS) delete e[k];
     delete e.text; // старий текст перенесено в learned
-    Object.assign(e, { title, learned, improve, updated: now }, f);
+    Object.assign(e, { title, learned, improve, notes, updated: now }, f);
     if (!entries.includes(e)) entries.push(e);
     current = e;
   }, 'Збережено ✓');
@@ -202,13 +202,13 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet()
 // ==== Список / пошук ====
 function renderList() {
   const q = $('l-search').value.toLowerCase(), ul = $('entries'); ul.innerHTML = '';
-  const list = entries.filter(e => !q || [e.title, learnedOf(e), e.improve].join(' ').toLowerCase().includes(q))
+  const list = entries.filter(e => !q || [e.title, learnedOf(e), e.improve, e.notes].join(' ').toLowerCase().includes(q))
     .sort((a, b) => (b.date + (b.updated || '')).localeCompare(a.date + (a.updated || '')));
   if (!list.length) ul.innerHTML = '<p class="muted">Записів не знайдено.</p>';
   for (const e of list) {
     const li = document.createElement('li'), b = document.createElement('b'), s = document.createElement('small'), p = document.createElement('div');
     s.textContent = human(e.date); b.textContent = e.title || 'Без назви';
-    p.className = 'muted'; p.textContent = [learnedOf(e), e.improve].filter(Boolean).join(' · ').slice(0, 120);
+    p.className = 'muted'; p.textContent = [learnedOf(e), e.improve, e.notes].filter(Boolean).join(' · ').slice(0, 120);
     li.append(s, b, p);
     li.onclick = () => { const [y, m] = e.date.split('-').map(Number); view = new Date(y, m - 1, 1); selected = e.date;
       renderCal(0); show('cal'); openSheet(e.date); };
@@ -421,7 +421,7 @@ async function storeTodayProfit(sum) {
   const d = todayStr(), now = new Date().toISOString(), val = Math.round(sum * 100) / 100;
   const backup = JSON.stringify(entries);
   let e = byDate(d);
-  if (!e) { e = { id: crypto.randomUUID(), date: d, created: now, title: '', learned: '', improve: '', updated: now }; entries.push(e); }
+  if (!e) { e = { id: crypto.randomUUID(), date: d, created: now, title: '', learned: '', improve: '', notes: '', updated: now }; entries.push(e); }
   Object.assign(e, { profit: val, profitAt: now });
   if (editDate === d && !$('sheet').classList.contains('hidden')) { $('f-profit').value = val.toFixed(2); tintProfit(); if (!current) current = e; }
   try { await save(); hint('Оновлено автоматично о ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) + ' (24 год, обидва гаманці).'); }
