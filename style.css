@@ -156,3 +156,12 @@ label{font-size:12px;letter-spacing:.04em}
 .trow.up input{background:rgba(61,220,110,.16)}.trow.down input{background:rgba(255,90,78,.17)}
 .day.sel .n{background:var(--fg);color:var(--bg)}
 .btn{color:#fff}
+/* Light sand inputs */
+input:not([type=checkbox]),textarea,.frow input[type=number],.frow.col input,.fields>input,.card input,#l-search,.reflect textarea,.panel input{
+  background:#CBB799;color:#301f17;caret-color:#7a2e12;box-shadow:none;transition:box-shadow .15s,background .15s}
+input::placeholder,textarea::placeholder{color:#6e5640;opacity:1}
+input:focus,textarea:focus{box-shadow:0 0 0 2px #8a5a3b,0 0 0 4px rgba(203,183,153,.35)}
+.trow.up input,.trow.down input{font-weight:700}
+.trow.up input{background:#bfd3a6;color:#14632e}
+.trow.down input{background:#dcb39f;color:#9b1c12}
+input[type=number]::-webkit-inner-spin-button{opacity:.5}
