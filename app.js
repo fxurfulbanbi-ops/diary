@@ -378,14 +378,28 @@ function tintProfit() {
   const v = parseFloat($('f-profit').value), row = $('f-profit-row');
   row.classList.toggle('up', v > 0); row.classList.toggle('down', v < 0);
 }
-$('f-profit').addEventListener('input', tintProfit);
+$('f-profit').addEventListener('input', e => {
+  const el = e.target, v = el.value;
+  let s = v.replace(/,/g, '.').replace(/[^0-9.\-]/g, '');
+  s = (s.startsWith('-') ? '-' : '') + s.replace(/-/g, '');
+  const i = s.indexOf('.'); if (i !== -1) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, '');
+  if (s !== v) el.value = s;
+  tintProfit();
+});
 const STEPS_GOAL = 15000;
 function tintSteps() {
   const raw = $('f-steps').value.trim(), v = parseInt(raw, 10), row = $('f-steps-row');
   const ok = raw !== '' && Number.isFinite(v);
   row.classList.toggle('up', ok && v >= STEPS_GOAL); row.classList.toggle('down', ok && v < STEPS_GOAL);
+  $('f-steps').style.width = Math.max(2, raw.length || 1) + 1 + 'ch';
+  const frac = ok ? Math.min(v / STEPS_GOAL, 1) : 0;
+  $('f-steps-ring').style.strokeDashoffset = (113.1 * (1 - frac)).toFixed(1);
+  $('f-steps-pct').textContent = ok ? Math.round(v / STEPS_GOAL * 100) + '% від цілі · 15 000' : 'Ціль 15 000';
 }
-$('f-steps').addEventListener('input', tintSteps);
+$('f-steps').addEventListener('input', e => {
+  const s = e.target.value.replace(/\D/g, ''); if (s !== e.target.value) e.target.value = s;
+  tintSteps();
+});
 function readFields() {
   const f = {}, pr = parseFloat($('f-profit').value), st = parseInt($('f-steps').value, 10);
   if (Number.isFinite(pr)) f.profit = Math.round(pr * 100) / 100;

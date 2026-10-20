@@ -76,7 +76,7 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
 .frow{display:flex;align-items:center;gap:8px;min-height:44px;border-top:.5px solid var(--sep)}
 .frow:first-child{border-top:0}.frow.col{flex-wrap:wrap;padding:6px 0}
 .flabel{flex:1;font-size:16px;white-space:nowrap}
-.frow input[type=number]{width:120px;flex:none;text-align:right;margin:0;padding:6px 8px;background:var(--bg2)}
+.frow input.num{width:120px;flex:none;text-align:right;margin:0;padding:6px 8px;background:var(--bg2)}
 .frow.col input{margin:4px 0 2px;padding:8px;background:var(--bg2);font-weight:400}
 .fields>input{margin:0 0 8px;padding:8px;background:var(--bg2);font-weight:400}
 .fhint{margin:-2px 0 6px;font-size:12px}.fhint:empty{display:none}
@@ -157,11 +157,27 @@ label{font-size:12px;letter-spacing:.04em}
 .day.sel .n{background:var(--fg);color:var(--bg)}
 .btn{color:#fff}
 /* Light sand inputs */
-input:not([type=checkbox]),textarea,.frow input[type=number],.frow.col input,.fields>input,.card input,#l-search,.reflect textarea,.panel input{
+input:not([type=checkbox]),textarea,.frow input.num,.frow.col input,.fields>input,.card input,#l-search,.reflect textarea,.panel input{
   background:#CBB799;color:#301f17;caret-color:#7a2e12;box-shadow:none;transition:box-shadow .15s,background .15s}
 input::placeholder,textarea::placeholder{color:#6e5640;opacity:1}
 input:focus,textarea:focus{box-shadow:0 0 0 2px #8a5a3b,0 0 0 4px rgba(203,183,153,.35)}
 .trow.up input,.trow.down input{font-weight:700}
 .trow.up input{background:#bfd3a6;color:#14632e}
 .trow.down input{background:#dcb39f;color:#9b1c12}
-input[type=number]::-webkit-inner-spin-button{opacity:.5}
+/* Apple Health-style steps card */
+.stepscard{margin:0 -12px;padding:12px 14px 14px;border-top:.5px solid var(--sep);background:linear-gradient(180deg,rgba(255,105,40,.08),transparent)}
+.sc-head{color:#FF7A3D;font-size:12.5px;letter-spacing:.04em;font-weight:600}
+.sc-body{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:6px}
+.sc-num{display:flex;align-items:baseline;gap:6px}
+.stepscard .sc-input{width:3ch;max-width:9ch;min-width:0;margin:0;padding:2px 6px;font:700 34px/1.1 var(--sys);letter-spacing:-.5px;color:var(--fg);
+  background:transparent;border-radius:8px;caret-color:#FF7A3D;box-shadow:none}
+.stepscard .sc-input:focus{background:#CBB799;color:#301f17;box-shadow:0 0 0 2px #FF7A3D}
+.stepscard .sc-input::placeholder{color:var(--muted)}
+.sc-unit{color:var(--muted);font-size:13px;letter-spacing:.03em}
+.sc-pct{color:var(--muted);font-size:11px;letter-spacing:.03em;margin-top:2px}
+.ring{width:64px;height:64px;flex:none;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:5.5;stroke-linecap:round}
+.ring .rbg{stroke:rgba(245,236,226,.12)}
+.ring .rfg{stroke:#FF7A3D;stroke-dasharray:113.1;stroke-dashoffset:113.1;transition:stroke-dashoffset .8s cubic-bezier(.2,.9,.3,1),stroke .3s}
+.stepscard.up .sc-input:not(:focus){color:var(--green)}.stepscard.up .ring .rfg{stroke:var(--green)}.stepscard.up .sc-pct{color:var(--green)}
+.stepscard.down .sc-input:not(:focus){color:#FF8A6B}.stepscard.down .ring .rfg{stroke:#FF6A4D}

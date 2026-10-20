@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#301f17">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com https://public-api.birdeye.so; style-src 'self'; script-src 'self'; font-src 'self'">
-<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="preload" href="fonts/michroma-latin.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/unbounded-cyrillic.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="style.css?v=202610210047"></head>
+<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="preload" href="fonts/michroma-latin.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/unbounded-cyrillic.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="style.css?v=20261021005229"></head>
 <body>
 <section id="setup" class="card hidden">
   <h1>📔 Налаштування пристрою</h1>
@@ -64,11 +64,19 @@
     <input id="e-title" placeholder="Заголовок">
     <div class="fields">
       <div id="f-profit-row" class="frow trow"><span class="flabel">💰 Прибуток, $</span>
-        <input id="f-profit" type="number" step="0.01" inputmode="decimal" placeholder="—">
+        <input id="f-profit" class="num" type="text" inputmode="decimal" autocomplete="off" placeholder="—">
         <button id="f-profit-fetch" class="tbtn small" aria-label="Оновити з Birdeye">↻</button></div>
       <p id="f-profit-hint" class="fhint muted"></p>
-      <div id="f-steps-row" class="frow trow"><span class="flabel">👣 Кроки</span>
-        <input id="f-steps" type="number" min="0" step="1" inputmode="numeric" placeholder="—"></div>
+      <div id="f-steps-row" class="stepscard">
+        <div class="sc-head">👣 Кроки</div>
+        <div class="sc-body">
+          <div class="sc-main">
+            <div class="sc-num"><input id="f-steps" class="sc-input" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="0" aria-label="Кроки"><span class="sc-unit">кроків</span></div>
+            <div id="f-steps-pct" class="sc-pct">Ціль 15 000</div>
+          </div>
+          <svg class="ring" viewBox="0 0 44 44" aria-hidden="true"><circle class="rbg" cx="22" cy="22" r="18"/><circle id="f-steps-ring" class="rfg" cx="22" cy="22" r="18"/></svg>
+        </div>
+      </div>
       <div class="frow col"><span class="flabel">🙂 Настрій</span>
         <button id="f-mood-btn" type="button" class="ddbtn" aria-haspopup="dialog">—</button>
         <input id="f-mood-note" placeholder="Коротко про емоції (необовʼязково)" maxlength="140"></div>
@@ -94,5 +102,5 @@
     <div class="wheelwrap"><div class="band"></div><div id="w-list" class="wlist" tabindex="0"></div></div>
   </div>
 </div>
-<script src="crypto.js?v=202610210047"></script><script src="app.js?v=202610210047"></script>
+<script src="crypto.js?v=20261021005229"></script><script src="app.js?v=20261021005229"></script>
 </body></html>
