@@ -9,6 +9,7 @@ const WD = ['неділя','понеділок','вівторок','середа
 
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+let settings = {};
 let password = null, token = null, entries = [], sha = null, current = null, lockTimer = null;
 let view = new Date(); view.setDate(1);
 let selected = null, editDate = null;
@@ -38,14 +39,15 @@ async function gh(method, body) {
 }
 async function load() {
   const f = await gh('GET');
-  if (!f) { entries = []; sha = null; return; }
+  if (!f) { entries = []; settings = {}; sha = null; return; }
   sha = f.sha;
-  entries = (await DiaryCrypto.decrypt(password, JSON.parse(b64d(f.content)))).entries || [];
+  const data = await DiaryCrypto.decrypt(password, JSON.parse(b64d(f.content)));
+  entries = data.entries || []; settings = (data.settings && typeof data.settings === 'object') ? data.settings : {};
 }
 let saveChain = Promise.resolve();
 function save() { const p = saveChain.then(saveNow); saveChain = p.catch(() => {}); return p; }
 async function saveNow() {
-  const box = await DiaryCrypto.encrypt(password, { entries });
+  const box = await DiaryCrypto.encrypt(password, { entries, settings });
   const r = await gh('PUT', { message: 'update', content: b64e(JSON.stringify(box)), ...(sha ? { sha } : {}) });
   sha = r.content.sha;
 }
@@ -75,7 +77,7 @@ async function unlock() {
 }
 function opened() { view = new Date(); view.setDate(1); selected = todayStr(); renderCal(0); show('cal'); poke(); autoProfit(); }
 function lock() {
-  password = token = current = null; entries = []; sha = null; clearTimeout(lockTimer);
+  password = token = current = null; entries = []; settings = {}; sha = null; clearTimeout(lockTimer);
   $('sheet').classList.add('hidden'); pnlReset(); $('e-text').value = $('e-title').value = '';
   $('entries').innerHTML = ''; $('c-grid').innerHTML = ''; $('c-preview').innerHTML = '';
   start();
@@ -218,19 +220,34 @@ function pnlReset() { beKey = null; $('p-keyform').classList.add('hidden'); $('p
 function pnlMsg(t) { const p = document.createElement('p'); p.className = 'msg'; p.textContent = t; $('p-body').replaceChildren(p); }
 async function getKey() {
   if (beKey) return beKey;
+  if (!password) return null;
+  // 1) ключ із зашифрованих даних (синхронізується між пристроями)
+  if (settings.birdeyeKey) { beKey = settings.birdeyeKey; cacheKeyLocally(beKey); return beKey; }
+  // 2) старий локальний ключ -> переносимо в дані
   const raw = localStorage.getItem(BE_KEY); if (!raw) return null;
-  try { beKey = (await DiaryCrypto.decrypt(password, JSON.parse(raw))).key; } catch { localStorage.removeItem(BE_KEY); return null; }
+  const pw = password;
+  try { beKey = (await DiaryCrypto.decrypt(pw, JSON.parse(raw))).key; }
+  catch { return null; } // НЕ видаляємо: могло бути блокування під час розшифрування
+  if (password !== pw) { beKey = null; return null; }
+  settings.birdeyeKey = beKey;
+  save().catch(() => { /* збережеться разом із наступним записом */ });
   return beKey;
 }
-function showKeyForm() { $('p-keyform').classList.remove('hidden'); $('p-keyforget').classList.toggle('hidden', !localStorage.getItem(BE_KEY)); $('p-keyinput').focus(); }
+async function cacheKeyLocally(k) {
+  try { const pw = password; const box = await DiaryCrypto.encrypt(pw, { key: k }); if (password === pw) localStorage.setItem(BE_KEY, JSON.stringify(box)); } catch {}
+}
+function showKeyForm() { $('p-keyform').classList.remove('hidden'); $('p-keyforget').classList.toggle('hidden', !(settings.birdeyeKey || localStorage.getItem(BE_KEY))); $('p-keyinput').focus(); }
 $('p-key').onclick = () => $('p-keyform').classList.contains('hidden') ? showKeyForm() : $('p-keyform').classList.add('hidden');
 $('p-keysave').onclick = async () => {
   const k = $('p-keyinput').value.trim(); if (!k || !password) return;
-  localStorage.setItem(BE_KEY, JSON.stringify(await DiaryCrypto.encrypt(password, { key: k })));
-  beKey = k; $('p-keyinput').value = ''; $('p-keyform').classList.add('hidden'); loadPnl();
+  beKey = k; settings.birdeyeKey = k;
+  $('p-keysave').disabled = true;
+  try { await Promise.all([cacheKeyLocally(k), save()]); }
+  catch (e) { pnlMsg('Ключ збережено на цьому пристрої, але не синхронізовано: ' + e.message); }
+  finally { $('p-keysave').disabled = false; } $('p-keyinput').value = ''; $('p-keyform').classList.add('hidden'); loadPnl();
 };
 $('p-keyforget').onclick = () => { if (!confirm('Видалити ключ Birdeye з цього пристрою?')) return;
-  localStorage.removeItem(BE_KEY); beKey = null; $('p-keyform').classList.add('hidden'); pnlReset(); };
+  localStorage.removeItem(BE_KEY); beKey = null; delete settings.birdeyeKey; save().catch(e => pnlMsg(e.message)); $('p-keyform').classList.add('hidden'); pnlReset(); };
 $('p-refresh').onclick = () => loadPnl();
 // Шукаємо поле pnl у відповіді незалежно від точної вкладеності
 function findPnl(o, depth = 0) {
