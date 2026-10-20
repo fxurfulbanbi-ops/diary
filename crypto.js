@@ -21,6 +21,24 @@
     const pt = await C.subtle.decrypt({ name: 'AES-GCM', iv: unb64(box.iv) }, key, unb64(box.ct));
     return JSON.parse(dec.decode(pt));
   }
-  const api = { encrypt, decrypt, ITER };
+  // Бінарні дані (фото): ключ кешується на сесію, щоб не виконувати PBKDF2 для кожного фото
+  let sess = null; const kcache = new Map();
+  async function keyFor(password, saltB64, iter) {
+    const id = saltB64 + ':' + iter;
+    if (!kcache.has(id) || kcache.get(id).pw !== password) kcache.set(id, { pw: password, key: await deriveKey(password, unb64(saltB64), iter) });
+    return kcache.get(id).key;
+  }
+  async function encryptBytes(password, bytes) {
+    if (!sess || sess.pw !== password) sess = { pw: password, salt: b64(C.getRandomValues(new Uint8Array(16))) };
+    const key = await keyFor(password, sess.salt, ITER), iv = C.getRandomValues(new Uint8Array(12));
+    const ct = await C.subtle.encrypt({ name: 'AES-GCM', iv }, key, bytes);
+    return { v: 1, kdf: 'PBKDF2-SHA256', iter: ITER, salt: sess.salt, iv: b64(iv), bin: b64(ct) };
+  }
+  async function decryptBytes(password, box) {
+    const key = await keyFor(password, box.salt, box.iter);
+    return new Uint8Array(await C.subtle.decrypt({ name: 'AES-GCM', iv: unb64(box.iv) }, key, unb64(box.bin)));
+  }
+  function clearCache() { sess = null; kcache.clear(); }
+  const api = { encrypt, decrypt, encryptBytes, decryptBytes, clearCache, ITER };
   if (typeof module !== 'undefined') module.exports = api; else root.DiaryCrypto = api;
 })(this);

@@ -4,8 +4,8 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#301f17">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com https://public-api.birdeye.so; style-src 'self'; script-src 'self'; font-src 'self'">
-<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="preload" href="fonts/michroma-latin.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/unbounded-cyrillic.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="style.css?v=20261021005500"></head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com https://public-api.birdeye.so; style-src 'self'; script-src 'self'; font-src 'self'; img-src 'self' blob: data:">
+<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="preload" href="fonts/michroma-latin.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/unbounded-cyrillic.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="style.css?v=20261021005857"></head>
 <body>
 <section id="setup" class="card hidden">
   <h1>📔 Налаштування пристрою</h1>
@@ -83,6 +83,11 @@
       <div class="frow"><span class="flabel">🏋️ Спортзал</span>
         <label class="switch"><input id="f-gym" type="checkbox"><span></span></label></div>
       <input id="f-gym-note" class="hidden" placeholder="Що тренували (необовʼязково)" maxlength="140">
+      <div id="f-gym-photos" class="gphotos hidden">
+        <div id="g-grid" class="ggrid"></div>
+        <label class="gadd"><input id="g-file" type="file" accept="image/*" multiple>+ Фото</label>
+        <p id="g-status" class="fhint muted"></p>
+      </div>
     </div>
     <div class="reflect">
     <div class="tgroup"><label class="tlabel" for="e-learned">What did i learn today?</label>
@@ -95,6 +100,10 @@
     <div class="sheetfoot"><span id="e-status" class="muted"></span><button id="e-del" class="tbtn danger">Видалити запис</button></div>
   </div>
 </div>
+<div id="viewer" class="hidden" role="dialog" aria-label="Фото">
+  <img id="v-img" alt="">
+  <div class="vbar"><button id="v-close" class="tbtn">Закрити</button><button id="v-del" class="tbtn danger">Видалити фото</button></div>
+</div>
 <div id="wheel" class="hidden" role="dialog" aria-label="Настрій від 1 до 10">
   <div class="backdrop" id="w-backdrop"></div>
   <div class="wpanel">
@@ -102,5 +111,5 @@
     <div class="wheelwrap"><div class="band"></div><div id="w-list" class="wlist" tabindex="0"></div></div>
   </div>
 </div>
-<script src="crypto.js?v=20261021005500"></script><script src="app.js?v=20261021005500"></script>
+<script src="crypto.js?v=20261021005857"></script><script src="app.js?v=20261021005857"></script>
 </body></html>

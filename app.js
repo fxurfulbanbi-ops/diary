@@ -35,13 +35,14 @@ const learnedOf = e => e.learned ?? e.text ?? '';
 const byDate = d => entries.filter(e => e.date === d).sort((a, b) => (b.updated || '').localeCompare(a.updated || ''))[0];
 
 // ==== GitHub API ====
-async function gh(method, body) {
-  const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`, {
+async function gh(method, body, path = FILE) {
+  const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
     method, cache: 'no-store',
-    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+    headers: { Authorization: 'Bearer ' + token, Accept: path === FILE ? 'application/vnd.github+json' : 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' },
     body: body ? JSON.stringify(body) : undefined });
   if (method === 'GET' && r.status === 404) return null;
   if (r.status === 401 || r.status === 403) throw new Error('GitHub відхилив токен (перевірте права або термін дії).');
+  if (r.status === 413) throw new Error('Файл завеликий для GitHub.');
   if (r.status === 409) throw new Error('Конфлікт: дані змінено на іншому пристрої. Оновіть сторінку.');
   if (!r.ok) throw new Error('Помилка GitHub: ' + r.status);
   return r.json();
@@ -86,6 +87,7 @@ async function unlock() {
 }
 function opened() { view = new Date(); view.setDate(1); selected = todayStr(); renderCal(0); show('cal'); poke(); autoProfit(); }
 function lock() {
+  photoReset(); DiaryCrypto.clearCache();
   password = token = current = null; entries = []; settings = {}; sha = null; clearTimeout(lockTimer);
   $('sheet').classList.add('hidden'); pnlReset(); $('e-learned').value = $('e-improve').value = $('e-notes').value = $('e-title').value = '';
   $('entries').innerHTML = ''; $('c-grid').innerHTML = ''; $('c-preview').innerHTML = '';
@@ -368,12 +370,12 @@ function fillFields(e) {
   e = e || {};
   setProfit(typeof e.profit === 'number' ? e.profit : null); $('f-steps').value = e.steps ?? ''; tintSteps();
   moodSel = Number.isInteger(e.moodScore) ? e.moodScore : null; legacyMood = e.mood || null; toggleMenu(false); paintMoods(); $('f-mood-note').value = e.moodNote || '';
-  $('f-gym').checked = !!e.gym; $('f-gym-note').value = e.gymNote || ''; $('f-gym-note').classList.toggle('hidden', !e.gym);
+  $('f-gym').checked = !!e.gym; $('f-gym-note').value = e.gymNote || ''; $('f-gym-note').classList.toggle('hidden', !e.gym); renderPhotos();
   const today = editDate === todayStr();
   $('f-profit-fetch').classList.toggle('hidden', !today);
   $('f-profit-hint').textContent = today ? (e.profitAt ? 'Оновлено автоматично о ' + new Date(e.profitAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) + '.' : '') : (typeof e.profit === 'number' ? 'Збережено з Birdeye.' : 'Немає даних з Birdeye');
 }
-$('f-gym').onchange = () => $('f-gym-note').classList.toggle('hidden', !$('f-gym').checked);
+$('f-gym').onchange = () => { $('f-gym-note').classList.toggle('hidden', !$('f-gym').checked); renderPhotos(); };
 function tintProfit() {
   const v = parseFloat($('f-profit').dataset.v), row = $('f-profit-row');
   row.classList.toggle('up', v > 0); row.classList.toggle('down', v < 0);
@@ -445,12 +447,121 @@ function badges(e) {
   if (e.steps != null) out.push(['👣 ' + e.steps.toLocaleString('uk-UA'), e.steps >= STEPS_GOAL ? 'pos' : 'neg']);
   const mf = Number.isInteger(e.moodScore) ? moodEmoji(e.moodScore) + ' ' + e.moodScore + '/10' : e.mood;
   if (mf || e.moodNote) out.push([(mf || '🙂') + (e.moodNote ? ' ' + e.moodNote.slice(0, 30) : ''), '']);
-  if (e.gym) out.push(['🏋️ ' + (e.gymNote ? e.gymNote.slice(0, 30) : 'Зал'), '']);
+  if (e.gym) out.push(['🏋️ ' + (e.gymNote ? e.gymNote.slice(0, 30) : 'Зал') + (e.gymPhotos && e.gymPhotos.length ? ' · 📷 ' + e.gymPhotos.length : ''), '']);
   if (!out.length) return null;
   const d = document.createElement('div'); d.className = 'badges';
   for (const [t, c] of out) { const s = document.createElement('span'); s.className = 'badge ' + c; s.textContent = t; d.append(s); }
   return d;
 }
+
+// ==== Фото до спортзалу (шифруються, зберігаються в diary-data/photos/) ====
+const photoURLs = new Map(); let viewing = null, photoBusy = false;
+const photoPath = (date, id) => `photos/${date}/${id}.bin`;
+function photoReset() {
+  for (const u of photoURLs.values()) URL.revokeObjectURL(u);
+  photoURLs.clear(); viewing = null; $('viewer').classList.add('hidden'); $('v-img').removeAttribute('src');
+  $('g-grid').innerHTML = ''; $('g-status').textContent = '';
+}
+function photoEntry() { return current ? entries.find(x => x.id === current.id) || byDate(editDate) : byDate(editDate); }
+function renderPhotos() {
+  const e = photoEntry(), list = (e && e.gymPhotos) || [];
+  $('f-gym-photos').classList.toggle('hidden', !$('f-gym').checked && !list.length);
+  const grid = $('g-grid'); grid.innerHTML = '';
+  for (const p of list) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'gthumb loading'; b.setAttribute('aria-label', 'Відкрити фото');
+    b.onclick = () => openViewer(p, b);
+    grid.append(b);
+    photoURL(e.date, p).then(u => { const img = document.createElement('img'); img.src = u; img.alt = ''; b.append(img); b.classList.remove('loading'); })
+      .catch(err => { b.classList.remove('loading'); b.classList.add('err'); b.textContent = '⚠️'; b.title = err.message; });
+  }
+}
+async function photoURL(date, p) {
+  if (photoURLs.has(p.id)) return photoURLs.get(p.id);
+  const pw = password, r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${photoPath(date, p.id)}`, {
+    cache: 'no-store', headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' } });
+  if (!r.ok) throw new Error(r.status === 404 ? 'Фото не знайдено' : 'Помилка GitHub: ' + r.status);
+  const box = JSON.parse(await r.text());
+  const bytes = await DiaryCrypto.decryptBytes(pw, box);
+  if (password !== pw) throw new Error('Заблоковано');
+  const u = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));
+  photoURLs.set(p.id, u); return u;
+}
+async function loadImage(file) {
+  if (window.createImageBitmap) { try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch {} }
+  const u = URL.createObjectURL(file);
+  try { const img = new Image(); img.src = u; await img.decode(); return img; }
+  catch { throw new Error('Не вдалося відкрити зображення (формат не підтримується браузером).'); }
+  finally { setTimeout(() => URL.revokeObjectURL(u), 1000); }
+}
+async function toJpeg(file, max = 1600, q = 0.8) {
+  const img = await loadImage(file), w = img.width, h = img.height, k = Math.min(1, max / Math.max(w, h));
+  const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  if (img.close) img.close();
+  const blob = await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('Не вдалося стиснути фото.')), 'image/jpeg', q));
+  return new Uint8Array(await blob.arrayBuffer());
+}
+const toB64 = s => btoa(s); // JSON з base64 — лише ASCII
+$('g-file').onchange = async ev => {
+  const files = [...ev.target.files]; ev.target.value = '';
+  if (!files.length || photoBusy || !password) return;
+  photoBusy = true; const st = $('g-status'), date = editDate;
+  let ok = 0;
+  try {
+    for (let i = 0; i < files.length; i++) {
+      st.textContent = `Обробка фото ${i + 1}/${files.length}…`;
+      const bytes = await toJpeg(files[i]);
+      st.textContent = `Шифрування ${i + 1}/${files.length}…`;
+      const box = await DiaryCrypto.encryptBytes(password, bytes);
+      st.textContent = `Завантаження ${i + 1}/${files.length} (${Math.round(bytes.length / 1024)} КБ)…`;
+      const id = crypto.randomUUID();
+      const r = await gh('PUT', { message: 'photo', content: toB64(JSON.stringify(box)) }, photoPath(date, id));
+      const now = new Date().toISOString();
+      let e = byDate(date);
+      if (!e) { e = { id: crypto.randomUUID(), date, created: now, title: '', learned: '', improve: '', notes: '', updated: now }; entries.push(e); }
+      if (!current && editDate === date) current = e;
+      e.gym = true; (e.gymPhotos = e.gymPhotos || []).push({ id, sha: r.content.sha });
+      photoURLs.set(id, URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' })));
+      await save(); ok++;
+      if (editDate === date) { $('f-gym').checked = true; $('f-gym-note').classList.remove('hidden'); renderPhotos(); }
+    }
+    st.textContent = ok === 1 ? 'Фото збережено ✓' : `Збережено фото: ${ok} ✓`;
+    renderCal(0);
+  } catch (err) {
+    st.textContent = (ok ? `Збережено ${ok}, далі помилка: ` : 'Помилка: ') + (err.message === 'Failed to fetch' ? 'немає звʼязку з GitHub.' : err.message);
+  } finally { photoBusy = false; }
+};
+function openViewer(p, thumb) {
+  const u = photoURLs.get(p.id); if (!u) return;
+  viewing = p; const v = $('viewer'), img = $('v-img'); img.src = u;
+  if (!reduced.matches && thumb) {
+    const r = thumb.getBoundingClientRect();
+    img.style.transformOrigin = `${r.left + r.width / 2}px ${r.top + r.height / 2}px`;
+  }
+  v.classList.remove('hidden', 'closing');
+}
+function closeViewer() {
+  const v = $('viewer'); if (v.classList.contains('hidden')) return;
+  viewing = null;
+  if (reduced.matches) return v.classList.add('hidden');
+  v.classList.add('closing'); setTimeout(() => v.classList.add('hidden'), 250);
+}
+$('v-close').onclick = closeViewer; $('v-img').onclick = closeViewer;
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeViewer(); });
+$('v-del').onclick = async () => {
+  const p = viewing, e = photoEntry();
+  if (!p || !e || !confirm('Видалити це фото назавжди?')) return;
+  const st = $('g-status'); st.textContent = 'Видаляю фото…'; closeViewer();
+  try {
+    try { await gh('DELETE', { message: 'delete photo', sha: p.sha }, photoPath(e.date, p.id)); }
+    catch (err) { if (!/404/.test(err.message)) throw err; }
+    e.gymPhotos = e.gymPhotos.filter(x => x.id !== p.id);
+    if (!e.gymPhotos.length) delete e.gymPhotos;
+    await save();
+    const u = photoURLs.get(p.id); if (u) URL.revokeObjectURL(u); photoURLs.delete(p.id);
+    st.textContent = 'Фото видалено'; renderPhotos(); renderCal(0);
+  } catch (err) { st.textContent = 'Не вдалося видалити: ' + err.message; }
+};
 
 function start() { show(localStorage.getItem(LS_KEY) ? 'unlock' : 'setup'); }
 start();
