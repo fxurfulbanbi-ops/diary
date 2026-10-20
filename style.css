@@ -47,7 +47,7 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
 .grabber{width:36px;height:5px;border-radius:3px;background:var(--sep);margin:0 auto 4px}
 .sheetbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .panel input{font-weight:600;margin-bottom:8px}
-.panel{overflow-y:auto}.panel textarea{flex:1;min-height:30vh;resize:none}
+.panel{overflow-y:auto}.panel textarea{min-height:18vh;resize:none;margin:0;display:block}
 .sheetfoot{display:flex;justify-content:space-between;align-items:center;padding-top:8px}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
 @keyframes down{to{transform:translateY(100%)}}
@@ -103,3 +103,6 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
   transition:color .15s,text-shadow .15s;will-change:transform,opacity;backface-visibility:hidden}
 .witem.center{font-weight:600}
 @media (hover:hover){.witem:hover{color:var(--red)}}
+.tgroup{margin-bottom:10px}
+.tlabel{display:block;margin:6px 4px 6px;font-size:14px;color:var(--muted)}
+.prevq{display:block;font-size:12px;color:var(--muted);margin-top:6px}
