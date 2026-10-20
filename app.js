@@ -115,7 +115,8 @@ function preview() {
   h.className = 'muted'; h.textContent = human(selected);
   b.textContent = e ? (e.title || 'Без назви') : 'Немає запису';
   t.textContent = e ? e.text : 'Натисніть на день, щоб написати.';
-  p.append(h, b, t); p.onclick = () => openSheet(selected);
+  p.append(h, b, t); if (e) { const bd = badges(e); if (bd) p.append(bd); }
+  p.onclick = () => openSheet(selected);
 }
 function shift(n) { view = new Date(view.getFullYear(), view.getMonth() + n, 1); renderCal(n); }
 $('c-prev').onclick = () => shift(-1);
@@ -139,7 +140,7 @@ function openSheet(ds) {
   editDate = ds; current = byDate(ds) || null;
   $('e-date').textContent = human(ds).replace(/^\S+, /, '');
   $('e-title').value = current ? current.title : ''; $('e-text').value = current ? current.text : '';
-  $('e-del').classList.toggle('hidden', !current); $('e-status').textContent = '';
+  fillFields(current); $('e-del').classList.toggle('hidden', !current); $('e-status').textContent = '';
   const s = $('sheet'); s.classList.remove('hidden', 'closing');
   if (!current) setTimeout(() => $('e-text').focus(), reduced.matches ? 0 : 380);
 }
@@ -156,12 +157,15 @@ async function persist(fn, ok) {
   catch (err) { entries = JSON.parse(backup); $('e-status').textContent = err.message; return false; }
 }
 $('e-save').onclick = async () => {
-  const title = $('e-title').value.trim(), text = $('e-text').value;
-  if (!current && !title && !text.trim()) return closeSheet();
+  const title = $('e-title').value.trim(), text = $('e-text').value, f = readFields();
+  if (!current && !title && !text.trim() && !Object.keys(f).length) return closeSheet();
   const now = new Date().toISOString();
   const okSaved = await persist(() => {
-    if (current) Object.assign(entries.find(x => x.id === current.id), { title, text, updated: now });
-    else { current = { id: crypto.randomUUID(), date: editDate, created: now, title, text, updated: now }; entries.push(current); }
+    const e = current ? entries.find(x => x.id === current.id) : { id: crypto.randomUUID(), date: editDate, created: now };
+    for (const k of FIELD_KEYS) delete e[k];
+    Object.assign(e, { title, text, updated: now }, f);
+    if (!current) entries.push(e);
+    current = e;
   }, 'Збережено ✓');
   if (okSaved) { renderCal(0); renderList(); closeSheet(); }
 };
@@ -274,6 +278,59 @@ async function loadPnl() {
     frag.append(upd); $('p-body').replaceChildren(frag);
   } catch (e) { if (password) { pnlMsg(e.message); if (e.badKey) { beKey = null; showKeyForm(); } } }
   finally { pnlBusy = false; }
+}
+
+// ==== Поля дня: прибуток, кроки, настрій, спортзал ====
+const FIELD_KEYS = ['profit', 'steps', 'mood', 'moodNote', 'gym', 'gymNote'];
+const MOODS = [['😄', 'Чудово'], ['🙂', 'Добре'], ['😐', 'Нормально'], ['😔', 'Сумно'], ['😠', 'Злість'], ['😰', 'Тривога']];
+let moodSel = null;
+for (const [m, name] of MOODS) {
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = m; b.title = name; b.setAttribute('aria-label', name);
+  b.onclick = () => { moodSel = moodSel === m ? null : m; paintMoods(); };
+  $('f-moods').append(b);
+}
+function paintMoods() { for (const b of $('f-moods').children) b.classList.toggle('on', b.textContent === moodSel); }
+function fillFields(e) {
+  e = e || {};
+  $('f-profit').value = e.profit ?? ''; $('f-steps').value = e.steps ?? '';
+  moodSel = e.mood || null; paintMoods(); $('f-mood-note').value = e.moodNote || '';
+  $('f-gym').checked = !!e.gym; $('f-gym-note').value = e.gymNote || ''; $('f-gym-note').classList.toggle('hidden', !e.gym);
+  const today = editDate === todayStr();
+  $('f-profit-fetch').classList.toggle('hidden', !today);
+  $('f-profit-hint').textContent = today ? '' : 'Для минулих днів введіть вручну (безкоштовний Birdeye дає лише останні 24 год).';
+}
+$('f-gym').onchange = () => $('f-gym-note').classList.toggle('hidden', !$('f-gym').checked);
+function readFields() {
+  const f = {}, pr = parseFloat($('f-profit').value), st = parseInt($('f-steps').value, 10);
+  if (Number.isFinite(pr)) f.profit = Math.round(pr * 100) / 100;
+  if (Number.isFinite(st) && st >= 0) f.steps = st;
+  if (moodSel) f.mood = moodSel;
+  const mn = $('f-mood-note').value.trim(); if (mn) f.moodNote = mn;
+  if ($('f-gym').checked) { f.gym = true; const gn = $('f-gym-note').value.trim(); if (gn) f.gymNote = gn; }
+  return f;
+}
+$('f-profit-fetch').onclick = async () => {
+  const key = await getKey();
+  if (!key) { $('f-profit-hint').textContent = 'Спочатку додайте ключ Birdeye у картці «Прибуток за 24 год».'; return; }
+  const btn = $('f-profit-fetch'); btn.disabled = true; $('f-profit-hint').textContent = 'Завантажую з Birdeye…';
+  try {
+    let sum = 0;
+    for (let i = 0; i < WALLETS.length; i++) { if (i) await sleep(1100); sum += (await fetchPnl(WALLETS[i], key)).total; }
+    $('f-profit').value = sum.toFixed(2);
+    $('f-profit-hint').textContent = 'Сума за останні 24 год по обох гаманцях. Натисніть «Готово», щоб зберегти.';
+  } catch (e) { $('f-profit-hint').textContent = e.message; }
+  finally { btn.disabled = false; }
+};
+function badges(e) {
+  const out = [];
+  if (e.profit != null) out.push([usd(e.profit), cls(e.profit)]);
+  if (e.steps != null) out.push(['👣 ' + e.steps.toLocaleString('uk-UA'), '']);
+  if (e.mood) out.push([e.mood + (e.moodNote ? ' ' + e.moodNote.slice(0, 30) : ''), '']);
+  if (e.gym) out.push(['🏋️ ' + (e.gymNote ? e.gymNote.slice(0, 30) : 'Зал'), '']);
+  if (!out.length) return null;
+  const d = document.createElement('div'); d.className = 'badges';
+  for (const [t, c] of out) { const s = document.createElement('span'); s.className = 'badge ' + c; s.textContent = t; d.append(s); }
+  return d;
 }
 
 function start() { show(localStorage.getItem(LS_KEY) ? 'unlock' : 'setup'); }

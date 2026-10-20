@@ -47,7 +47,7 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
 .grabber{width:36px;height:5px;border-radius:3px;background:var(--sep);margin:0 auto 4px}
 .sheetbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .panel input{font-weight:600;margin-bottom:8px}
-.panel textarea{flex:1;resize:none}
+.panel{overflow-y:auto}.panel textarea{flex:1;min-height:30vh;resize:none}
 .sheetfoot{display:flex;justify-content:space-between;align-items:center;padding-top:8px}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
 @keyframes down{to{transform:translateY(100%)}}
@@ -67,3 +67,22 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
 .spinner{width:22px;height:22px;border:2.5px solid var(--sep);border-top-color:var(--muted);border-radius:50%;animation:spin .8s linear infinite;margin:10px auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.spinner{animation:spin 1.6s linear infinite!important}}
+/* fields */
+.fields{background:var(--card);border-radius:10px;margin-bottom:8px;padding:0 12px}
+.frow{display:flex;align-items:center;gap:8px;min-height:44px;border-top:.5px solid var(--sep)}
+.frow:first-child{border-top:0}.frow.col{flex-wrap:wrap;padding:6px 0}
+.flabel{flex:1;font-size:16px;white-space:nowrap}
+.frow input[type=number]{width:120px;flex:none;text-align:right;margin:0;padding:6px 8px;background:var(--bg2)}
+.frow.col input{margin:4px 0 2px;padding:8px;background:var(--bg2);font-weight:400}
+.fields>input{margin:0 0 8px;padding:8px;background:var(--bg2);font-weight:400}
+.fhint{margin:-2px 0 6px;font-size:12px}.fhint:empty{display:none}
+.moods{display:flex;gap:4px}
+.moods button{font-size:24px;width:38px;height:38px;border-radius:50%;opacity:.45;transition:transform .15s,opacity .15s,background .15s}
+.moods button.on{opacity:1;background:var(--bg2);transform:scale(1.12)}
+.switch{position:relative;width:51px;height:31px;flex:none;margin:0}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.switch span{position:absolute;inset:0;background:var(--sep);border-radius:31px;transition:background .2s}
+.switch span::before{content:"";position:absolute;width:27px;height:27px;left:2px;top:2px;background:#fff;border-radius:50%;box-shadow:0 2px 4px #0003;transition:transform .2s}
+.switch input:checked+span{background:#34C759}.switch input:checked+span::before{transform:translateX(20px)}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.badge{font-size:13px;background:var(--card);border-radius:8px;padding:2px 8px}

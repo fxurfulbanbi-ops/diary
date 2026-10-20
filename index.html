@@ -63,6 +63,20 @@
     <div class="grabber"></div>
     <div class="sheetbar"><button id="e-cancel" class="tbtn">Скасувати</button><b id="e-date"></b><button id="e-save" class="tbtn strong">Готово</button></div>
     <input id="e-title" placeholder="Заголовок">
+    <div class="fields">
+      <div class="frow"><span class="flabel">💰 Прибуток, $</span>
+        <input id="f-profit" type="number" step="0.01" inputmode="decimal" placeholder="—">
+        <button id="f-profit-fetch" class="tbtn small">Birdeye</button></div>
+      <p id="f-profit-hint" class="fhint muted"></p>
+      <div class="frow"><span class="flabel">👣 Кроки</span>
+        <input id="f-steps" type="number" min="0" step="1" inputmode="numeric" placeholder="—"></div>
+      <div class="frow col"><span class="flabel">🙂 Настрій</span>
+        <div id="f-moods" class="moods"></div>
+        <input id="f-mood-note" placeholder="Коротко про емоції (необовʼязково)" maxlength="140"></div>
+      <div class="frow"><span class="flabel">🏋️ Спортзал</span>
+        <label class="switch"><input id="f-gym" type="checkbox"><span></span></label></div>
+      <input id="f-gym-note" class="hidden" placeholder="Що тренували (необовʼязково)" maxlength="140">
+    </div>
     <textarea id="e-text" placeholder="Що сьогодні сталося?"></textarea>
     <div class="sheetfoot"><span id="e-status" class="muted"></span><button id="e-del" class="tbtn danger">Видалити запис</button></div>
   </div>
