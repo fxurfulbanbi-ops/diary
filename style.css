@@ -148,3 +148,11 @@ h1{font-size:18px;font-weight:400}
 label{font-size:12px;letter-spacing:.04em}
 .arrow{font-family:var(--sys)}
 #boot-err{font-size:13px}
+/* Warm brown theme (both light & dark) */
+:root,:root:root{--bg:#301f17;--bg2:#3d2a20;--card:#4a3328;--fg:#f5ece2;--muted:#bba894;--sep:rgba(245,236,226,.16);--red:#FF5A4E;--green:#3DDC6E;color-scheme:dark}
+.switch span{background:#5a4033}
+.wpanel,.panel{background:var(--bg2)}
+.trow.up{background:rgba(61,220,110,.14)}.trow.down{background:rgba(255,90,78,.15)}
+.trow.up input{background:rgba(61,220,110,.16)}.trow.down input{background:rgba(255,90,78,.17)}
+.day.sel .n{background:var(--fg);color:var(--bg)}
+.btn{color:#fff}
