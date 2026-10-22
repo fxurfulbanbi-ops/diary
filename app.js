@@ -567,22 +567,32 @@ $('v-del').onclick = async () => {
 
 // ==== Малювання (Apple Pencil / палець / мишка). PNG шифрується й лежить у diary-data/drawings/ ====
 const DW = 1600, DH = 1200, dcv = $('d-canvas'), dctx = dcv.getContext('2d');
-const DCOLORS = ['#301f17', '#ffffff', '#CBB799', '#FF5A4E', '#3DDC6E', '#3D8BFF'];
+const DCOLORS = ['#000000', '#301f17', '#4a4a4a', '#8e8e93', '#d1d1d6', '#ffffff', '#CBB799', '#8B5A2B', '#FF3B30', '#B3261E', '#FF9500', '#FFCC00', '#34C759', '#1E7B34', '#30B0C7', '#007AFF', '#1C3F94', '#AF52DE', '#FF2D92', '#FFB3C7'];
 const drawPath = (date, id) => `drawings/${date}/${id}.bin`;
 let dTool = 'pen', dColor = DCOLORS[0], dBase = null, dStrokes = [], dLive = null, dPenSeen = false;
 let dDirty = false, dTimer = null, dGen = 0, dDate = null, dChain = Promise.resolve();
 const dPad = $('d-colors');
 for (const c of DCOLORS) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'dcol' + (c === dColor ? ' on' : ''); b.style.background = c; b.setAttribute('aria-label', 'Колір ' + c);
-  b.onclick = () => { dColor = c; setTool('pen'); for (const x of dPad.children) x.classList.toggle('on', x === b); };
+  b.onclick = () => pickColor(c, b);
   dPad.append(b);
 }
-function setTool(t) { dTool = t; $('d-pen').classList.toggle('on', t === 'pen'); $('d-eraser').classList.toggle('on', t === 'eraser'); }
+const dPick = document.createElement('label'); dPick.className = 'dpick'; dPick.title = 'Свій колір';
+dPick.innerHTML = '<input type="color" aria-label="Свій колір" value="#cbb799">'; dPad.append(dPick);
+dPick.firstChild.addEventListener('input', ev => pickColor(ev.target.value, null));
+function pickColor(c, btn) { dColor = c; setTool('pen'); for (const x of dPad.querySelectorAll('.dcol')) x.classList.toggle('on', x === btn); $('d-cur').style.background = c; }
+$('d-cur').style.background = dColor;
+const dSize = { pen: 4, eraser: 18 };
+$('d-width').addEventListener('input', ev => { dSize[dTool] = +ev.target.value; });
+function setTool(t) {
+  dTool = t; $('d-width').value = dSize[t];
+  for (const [id, on] of [['d-pen', t === 'pen'], ['d-eraser', t === 'eraser']]) { $(id).classList.toggle('on', on); $(id).setAttribute('aria-pressed', on); }
+}
 $('d-pen').onclick = () => setTool('pen'); $('d-eraser').onclick = () => setTool('eraser');
 function strokeSeg(s, a, b) {
   dctx.globalCompositeOperation = s.tool === 'eraser' ? 'destination-out' : 'source-over';
   dctx.strokeStyle = s.color; dctx.lineCap = dctx.lineJoin = 'round';
-  dctx.lineWidth = Math.max(0.6, s.w * (s.pen ? 0.25 + b.p * 1.5 : 1) * (s.tool === 'eraser' ? 3 : 1));
+  dctx.lineWidth = Math.max(0.6, s.w * (s.pen ? 0.25 + b.p * 1.5 : 1) );
   dctx.beginPath(); dctx.moveTo(a.x, a.y); dctx.lineTo(b.x, b.y); dctx.stroke();
 }
 function drawStroke(s) { const P = s.pts; for (let i = 0; i < P.length; i++) strokeSeg(s, P[Math.max(0, i - 1)], P[i]); }

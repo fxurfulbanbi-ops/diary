@@ -4,8 +4,8 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#301f17">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com https://public-api.birdeye.so; style-src 'self'; script-src 'self'; font-src 'self'; img-src 'self' blob: data:">
-<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="preload" href="fonts/michroma-latin.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/unbounded-cyrillic.woff2?v=1" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="style.css?v=20261022220046"></head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com https://public-api.birdeye.so; style-src 'self'; script-src 'self'; img-src 'self' blob: data:">
+<title>Щоденник</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=20261022220417"></head>
 <body>
 <section id="setup" class="card hidden">
   <h1>📔 Налаштування пристрою</h1>
@@ -92,13 +92,13 @@
     <div id="draw" class="draw">
       <div class="dhead"><span class="tlabel">DRAWING</span><button id="d-fs" class="tbtn small" type="button" aria-label="На весь екран">⤢</button></div>
       <div class="dtools">
-        <button id="d-pen" class="dtool on" type="button" aria-label="Перо">✎</button>
-        <button id="d-eraser" class="dtool" type="button" aria-label="Гумка">⌫</button>
-        <span class="dcolors" id="d-colors"></span>
+        <span class="dseg" role="group" aria-label="Інструмент"><button id="d-pen" class="on" type="button" aria-pressed="true">✏️ Олівець</button><button id="d-eraser" type="button" aria-pressed="false">🧽 Гумка</button></span>
+        <span id="d-cur" class="dcur" title="Поточний колір"></span>
         <input id="d-width" type="range" min="1" max="40" value="4" aria-label="Товщина">
         <button id="d-undo" class="dtool" type="button" aria-label="Скасувати">↶</button>
         <button id="d-clear" class="dtool" type="button" aria-label="Очистити">🗑</button>
       </div>
+      <div class="dcolors" id="d-colors"></div>
       <div class="dwrap"><canvas id="d-canvas" width="1600" height="1200" aria-label="Полотно для малювання"></canvas><div id="d-toast" class="dtoast" aria-live="polite"></div></div>
       <p id="d-status" class="fhint muted"></p>
     </div>
@@ -124,5 +124,5 @@
     <div class="wheelwrap"><div class="band"></div><div id="w-list" class="wlist" tabindex="0"></div></div>
   </div>
 </div>
-<script src="crypto.js?v=20261022220046"></script><script src="app.js?v=20261022220046"></script>
+<script src="crypto.js?v=20261022220417"></script><script src="app.js?v=20261022220417"></script>
 </body></html>
