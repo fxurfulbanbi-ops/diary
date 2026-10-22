@@ -87,7 +87,7 @@ async function unlock() {
 }
 function opened() { view = new Date(); view.setDate(1); selected = todayStr(); renderCal(0); show('cal'); poke(); autoProfit(); }
 function lock() {
-  photoReset(); DiaryCrypto.clearCache();
+  photoReset(); drawReset(); DiaryCrypto.clearCache();
   password = token = current = null; entries = []; settings = {}; sha = null; clearTimeout(lockTimer);
   $('sheet').classList.add('hidden'); pnlReset(); $('e-learned').value = $('e-improve').value = $('e-notes').value = $('e-title').value = '';
   $('entries').innerHTML = ''; $('c-grid').innerHTML = ''; $('c-preview').innerHTML = '';
@@ -95,7 +95,7 @@ function lock() {
 }
 function poke() { if (!password) return; clearTimeout(lockTimer); lockTimer = setTimeout(lock, LOCK_MS); }
 ['click', 'keydown', 'touchstart', 'scroll'].forEach(ev => document.addEventListener(ev, poke, { passive: true }));
-document.addEventListener('visibilitychange', () => { if (document.hidden && password) { clearTimeout(lockTimer); lockTimer = setTimeout(lock, 60000); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden && password) { drawFlush(); clearTimeout(lockTimer); lockTimer = setTimeout(lock, 60000); } });
 
 // ==== Календар ====
 function renderCal(dir) {
@@ -168,6 +168,7 @@ function openSheet(ds) {
 }
 function closeSheet() {
   const s = $('sheet'); if (s.classList.contains('hidden')) return;
+  drawFlush(); drawFs(false);
   if (reduced.matches) return s.classList.add('hidden');
   s.classList.add('closing');
   setTimeout(() => s.classList.add('hidden'), 280);
@@ -370,7 +371,7 @@ function fillFields(e) {
   e = e || {};
   setProfit(typeof e.profit === 'number' ? e.profit : null); $('f-steps').value = e.steps ?? ''; tintSteps();
   moodSel = Number.isInteger(e.moodScore) ? e.moodScore : null; legacyMood = e.mood || null; toggleMenu(false); paintMoods(); $('f-mood-note').value = e.moodNote || '';
-  $('f-gym').checked = !!e.gym; $('f-gym-note').value = e.gymNote || ''; $('f-gym-note').classList.toggle('hidden', !e.gym); renderPhotos();
+  $('f-gym').checked = !!e.gym; $('f-gym-note').value = e.gymNote || ''; $('f-gym-note').classList.toggle('hidden', !e.gym); renderPhotos(); drawLoad();
   const today = editDate === todayStr();
   $('f-profit-fetch').classList.toggle('hidden', !today);
   $('f-profit-hint').textContent = today ? (e.profitAt ? 'Оновлено автоматично о ' + new Date(e.profitAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) + '.' : '') : (typeof e.profit === 'number' ? 'Збережено з Birdeye.' : 'Немає даних з Birdeye');
@@ -448,6 +449,7 @@ function badges(e) {
   const mf = Number.isInteger(e.moodScore) ? moodEmoji(e.moodScore) + ' ' + e.moodScore + '/10' : e.mood;
   if (mf || e.moodNote) out.push([(mf || '🙂') + (e.moodNote ? ' ' + e.moodNote.slice(0, 30) : ''), '']);
   if (e.gym) out.push(['🏋️ ' + (e.gymNote ? e.gymNote.slice(0, 30) : 'Зал') + (e.gymPhotos && e.gymPhotos.length ? ' · 📷 ' + e.gymPhotos.length : ''), '']);
+  if (e.drawing) out.push(['🎨 Малюнок', '']);
   if (!out.length) return null;
   const d = document.createElement('div'); d.className = 'badges';
   for (const [t, c] of out) { const s = document.createElement('span'); s.className = 'badge ' + c; s.textContent = t; d.append(s); }
@@ -562,6 +564,113 @@ $('v-del').onclick = async () => {
     st.textContent = 'Фото видалено'; renderPhotos(); renderCal(0);
   } catch (err) { st.textContent = 'Не вдалося видалити: ' + err.message; }
 };
+
+// ==== Малювання (Apple Pencil / палець / мишка). PNG шифрується й лежить у diary-data/drawings/ ====
+const DW = 1600, DH = 1200, dcv = $('d-canvas'), dctx = dcv.getContext('2d');
+const DCOLORS = ['#301f17', '#ffffff', '#CBB799', '#FF5A4E', '#3DDC6E', '#3D8BFF'];
+const drawPath = (date, id) => `drawings/${date}/${id}.bin`;
+let dTool = 'pen', dColor = DCOLORS[0], dBase = null, dStrokes = [], dLive = null, dPenSeen = false;
+let dDirty = false, dTimer = null, dGen = 0, dDate = null, dChain = Promise.resolve();
+const dPad = $('d-colors');
+for (const c of DCOLORS) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'dcol' + (c === dColor ? ' on' : ''); b.style.background = c; b.setAttribute('aria-label', 'Колір ' + c);
+  b.onclick = () => { dColor = c; setTool('pen'); for (const x of dPad.children) x.classList.toggle('on', x === b); };
+  dPad.append(b);
+}
+function setTool(t) { dTool = t; $('d-pen').classList.toggle('on', t === 'pen'); $('d-eraser').classList.toggle('on', t === 'eraser'); }
+$('d-pen').onclick = () => setTool('pen'); $('d-eraser').onclick = () => setTool('eraser');
+function strokeSeg(s, a, b) {
+  dctx.globalCompositeOperation = s.tool === 'eraser' ? 'destination-out' : 'source-over';
+  dctx.strokeStyle = s.color; dctx.lineCap = dctx.lineJoin = 'round';
+  dctx.lineWidth = Math.max(0.6, s.w * (s.pen ? 0.25 + b.p * 1.5 : 1) * (s.tool === 'eraser' ? 3 : 1));
+  dctx.beginPath(); dctx.moveTo(a.x, a.y); dctx.lineTo(b.x, b.y); dctx.stroke();
+}
+function drawStroke(s) { const P = s.pts; for (let i = 0; i < P.length; i++) strokeSeg(s, P[Math.max(0, i - 1)], P[i]); }
+function redraw() {
+  dctx.globalCompositeOperation = 'source-over'; dctx.clearRect(0, 0, DW, DH);
+  if (dBase) dctx.drawImage(dBase, 0, 0, DW, DH);
+  for (const s of dStrokes) drawStroke(s);
+}
+function dPoint(ev) {
+  const r = dcv.getBoundingClientRect();
+  return { x: (ev.clientX - r.left) * DW / r.width, y: (ev.clientY - r.top) * DH / r.height, p: ev.pressure || 0.5 };
+}
+dcv.addEventListener('pointerdown', ev => {
+  if (!password) return;
+  if (ev.pointerType === 'pen') dPenSeen = true;
+  else if (ev.pointerType === 'touch' && dPenSeen) return; // відкидаємо долоню, коли користуються пером
+  if (dLive || ev.button > 0) return;
+  ev.preventDefault(); poke();
+  try { dcv.setPointerCapture(ev.pointerId); } catch {}
+  dLive = { id: ev.pointerId, tool: dTool, color: dColor, w: +$('d-width').value * 2, pen: ev.pointerType === 'pen', pts: [dPoint(ev)] };
+  strokeSeg(dLive, dLive.pts[0], dLive.pts[0]);
+});
+dcv.addEventListener('pointermove', ev => {
+  if (!dLive || ev.pointerId !== dLive.id) return;
+  ev.preventDefault();
+  const list = ev.getCoalescedEvents ? ev.getCoalescedEvents() : [ev];
+  for (const c of (list.length ? list : [ev])) { const pt = dPoint(c), P = dLive.pts; strokeSeg(dLive, P[P.length - 1], pt); P.push(pt); }
+});
+function dEnd(ev) {
+  if (!dLive || ev.pointerId !== dLive.id) return;
+  dStrokes.push(dLive); dLive = null; drawChanged();
+}
+dcv.addEventListener('pointerup', dEnd); dcv.addEventListener('pointercancel', dEnd);
+dcv.addEventListener('touchstart', ev => ev.preventDefault(), { passive: false }); // без лупи/виділення в iOS
+$('d-undo').onclick = () => { if (!dStrokes.length) return; dStrokes.pop(); redraw(); drawChanged(); };
+$('d-clear').onclick = () => { if (!dBase && !dStrokes.length) return; if (!confirm('Очистити малюнок?')) return; dBase = null; dStrokes = []; redraw(); drawChanged(); };
+$('d-fs').onclick = () => drawFs(!$('draw').classList.contains('fs'));
+function drawFs(on) { $('draw').classList.toggle('fs', on); document.body.classList.toggle('drawfs', on); $('d-fs').textContent = on ? '✕' : '⤢'; }
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') drawFs(false); });
+function drawChanged() { dDirty = true; $('d-status').textContent = 'Не збережено…'; clearTimeout(dTimer); dTimer = setTimeout(drawFlush, 1500); }
+function drawReset() { clearTimeout(dTimer); dGen++; dDirty = false; dBase = null; dStrokes = []; dLive = null; dDate = null; redraw(); $('d-status').textContent = ''; drawFs(false); }
+async function drawLoad() {
+  if (dDirty) await drawFlush();
+  const gen = ++dGen; dBase = null; dStrokes = []; dLive = null; dDate = editDate; redraw();
+  const e = photoEntry(), d = e && e.drawing;
+  $('d-status').textContent = d ? 'Завантажую малюнок…' : '';
+  if (!d) return;
+  try {
+    const pw = password, r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${drawPath(e.date, d.id)}`, {
+      cache: 'no-store', headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' } });
+    if (!r.ok) throw new Error(r.status === 404 ? 'Малюнок не знайдено' : 'Помилка GitHub: ' + r.status);
+    const bytes = await DiaryCrypto.decryptBytes(pw, JSON.parse(await r.text()));
+    const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+    if (gen !== dGen) return;
+    dBase = bmp; redraw(); $('d-status').textContent = '';
+  } catch (err) { if (gen === dGen) $('d-status').textContent = '⚠️ ' + err.message; }
+}
+function drawFlush() {
+  clearTimeout(dTimer);
+  if (!dDirty || !password || !dDate) return dChain;
+  dDirty = false;
+  const date = dDate, pw = password, empty = !dBase && !dStrokes.length;
+  const pngP = empty ? null : new Promise((res, rej) => dcv.toBlob(b => b ? res(b) : rej(new Error('Не вдалося зберегти малюнок.')), 'image/png'));
+  const p = dChain.then(async () => {
+    const st = $('d-status'); st.textContent = 'Зберігаю малюнок…';
+    try {
+      const now = new Date().toISOString();
+      let e = byDate(date);
+      if (empty) {
+        if (!e || !e.drawing) { st.textContent = ''; return; }
+        try { await gh('DELETE', { message: 'delete drawing', sha: e.drawing.sha }, drawPath(date, e.drawing.id)); } catch (err) { if (!/404/.test(err.message)) throw err; }
+        delete e.drawing; await save(); st.textContent = 'Малюнок очищено ✓'; renderCal(0); return;
+      }
+      const bytes = new Uint8Array(await (await pngP).arrayBuffer());
+      const box = await DiaryCrypto.encryptBytes(pw, bytes);
+      if (password !== pw) throw new Error('Заблоковано');
+      e = byDate(date);
+      const old = e && e.drawing, id = old ? old.id : crypto.randomUUID();
+      const r = await gh('PUT', { message: 'drawing', content: toB64(JSON.stringify(box)), ...(old ? { sha: old.sha } : {}) }, drawPath(date, id));
+      e = byDate(date);
+      if (!e) { e = { id: crypto.randomUUID(), date, created: now, title: '', learned: '', improve: '', notes: '', updated: now }; entries.push(e); }
+      if (!current && editDate === date) current = e;
+      e.drawing = { id, sha: r.content.sha };
+      await save(); if (dDate === date) st.textContent = 'Малюнок збережено ✓'; renderCal(0);
+    } catch (err) { if (dDate === date) { dDirty = true; st.textContent = 'Не збережено: ' + (err.message === 'Failed to fetch' ? 'немає звʼязку з GitHub.' : err.message); } }
+  });
+  dChain = p.catch(() => {}); return p;
+}
 
 function start() { show(localStorage.getItem(LS_KEY) ? 'unlock' : 'setup'); }
 start();
