@@ -220,3 +220,6 @@ input:focus,textarea:focus{box-shadow:0 0 0 2px #8a5a3b,0 0 0 4px rgba(203,183,1
 .draw.fs .dwrap{flex:1;aspect-ratio:auto;display:flex;align-items:center;justify-content:center;background:none;box-shadow:none}
 .draw.fs #d-canvas{width:min(100%,calc((100dvh - 130px)*4/3));height:auto;aspect-ratio:4/3;background:#CBB799;border-radius:12px}
 body.drawfs{overflow:hidden}
+.dtoast{position:absolute;left:50%;top:14px;transform:translateX(-50%);padding:6px 14px;border-radius:20px;background:rgba(48,31,23,.85);color:#f5ece2;font-size:13px;letter-spacing:.04em;pointer-events:none;opacity:0}
+.dtoast.show{animation:dtoast .9s ease forwards}
+@keyframes dtoast{0%{opacity:0;transform:translate(-50%,-6px) scale(.9)}15%,65%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0}}

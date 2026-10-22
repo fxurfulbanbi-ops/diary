@@ -595,8 +595,35 @@ function dPoint(ev) {
   const r = dcv.getBoundingClientRect();
   return { x: (ev.clientX - r.left) * DW / r.width, y: (ev.clientY - r.top) * DH / r.height, p: ev.pressure || 0.5 };
 }
+// Жест «два пальці тапнули» = скасувати (як у Procreate). Працює і з увімкненим відкиданням долоні.
+const dTouches = new Map(); let dTap = null;
+function dToast(t) { const el = $('d-toast'); el.textContent = t; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+function dUndo() { if (!dStrokes.length) return false; dStrokes.pop(); redraw(); drawChanged(); return true; }
+dcv.addEventListener('pointerdown', ev => {
+  if (ev.pointerType !== 'touch') return;
+  const now = performance.now();
+  dTouches.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (dTouches.size === 1) dTap = { t0: now, max: 1, ok: true };
+  else if (dTap) {
+    dTap.max = Math.max(dTap.max, dTouches.size);
+    if (now - dTap.t0 > 300) dTap.ok = false;
+    // перший палець встиг почати лінію — прибираємо її
+    if (dLive && !dLive.pen && dTouches.has(dLive.id)) { dLive = null; redraw(); }
+  }
+}, true);
+dcv.addEventListener('pointermove', ev => {
+  const s = dTouches.get(ev.pointerId); if (!s || !dTap) return;
+  if (Math.hypot(ev.clientX - s.x, ev.clientY - s.y) > 20) dTap.ok = false;
+}, true);
+function dTouchEnd(ev) {
+  if (!dTouches.delete(ev.pointerId) || dTouches.size || !dTap) return;
+  const g = dTap; dTap = null;
+  if (ev.type === 'pointerup' && g.ok && g.max === 2 && performance.now() - g.t0 < 400) dToast(dUndo() ? '↶ Undo' : 'Нічого скасовувати');
+}
+dcv.addEventListener('pointerup', dTouchEnd, true); dcv.addEventListener('pointercancel', dTouchEnd, true);
 dcv.addEventListener('pointerdown', ev => {
   if (!password) return;
+  if (ev.pointerType === 'touch' && dTouches.size > 1) return; // другий палець — не малюємо
   if (ev.pointerType === 'pen') dPenSeen = true;
   else if (ev.pointerType === 'touch' && dPenSeen) return; // відкидаємо долоню, коли користуються пером
   if (dLive || ev.button > 0) return;
@@ -617,7 +644,7 @@ function dEnd(ev) {
 }
 dcv.addEventListener('pointerup', dEnd); dcv.addEventListener('pointercancel', dEnd);
 dcv.addEventListener('touchstart', ev => ev.preventDefault(), { passive: false }); // без лупи/виділення в iOS
-$('d-undo').onclick = () => { if (!dStrokes.length) return; dStrokes.pop(); redraw(); drawChanged(); };
+$('d-undo').onclick = () => dUndo();
 $('d-clear').onclick = () => { if (!dBase && !dStrokes.length) return; if (!confirm('Очистити малюнок?')) return; dBase = null; dStrokes = []; redraw(); drawChanged(); };
 $('d-fs').onclick = () => drawFs(!$('draw').classList.contains('fs'));
 function drawFs(on) { $('draw').classList.toggle('fs', on); document.body.classList.toggle('drawfs', on); $('d-fs').textContent = on ? '✕' : '⤢'; }
