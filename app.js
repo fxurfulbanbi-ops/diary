@@ -569,11 +569,11 @@ $('v-del').onclick = async () => {
 const DW = 1600, DH = 1200, dcv = $('d-canvas'), dctx = dcv.getContext('2d');
 const DCOLORS = ['#000000', '#301f17', '#4a4a4a', '#8e8e93', '#d1d1d6', '#ffffff', '#CBB799', '#8B5A2B', '#FF3B30', '#B3261E', '#FF9500', '#FFCC00', '#34C759', '#1E7B34', '#30B0C7', '#007AFF', '#1C3F94', '#AF52DE', '#FF2D92', '#FFB3C7'];
 const drawPath = (date, id) => `drawings/${date}/${id}.bin`;
-let dTool = 'pen', dColor = DCOLORS[0], dBase = null, dStrokes = [], dLive = null, dPenSeen = false;
+let dTool = 'pen', dColor = '#ffffff', dBase = null, dStrokes = [], dLive = null, dPenSeen = false;
 let dDirty = false, dTimer = null, dGen = 0, dDate = null, dChain = Promise.resolve();
 const dPad = $('d-colors');
 for (const c of DCOLORS) {
-  const b = document.createElement('button'); b.type = 'button'; b.className = 'dcol' + (c === dColor ? ' on' : ''); b.style.background = c; b.setAttribute('aria-label', 'Колір ' + c);
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'dcol' + (c === '#ffffff' ? ' on' : ''); b.style.background = c; b.setAttribute('aria-label', 'Колір ' + c);
   b.onclick = () => pickColor(c, b);
   dPad.append(b);
 }
@@ -660,11 +660,14 @@ $('d-fs').onclick = () => drawFs(!$('draw').classList.contains('fs'));
 function drawFs(on) { $('draw').classList.toggle('fs', on); document.body.classList.toggle('drawfs', on); $('d-fs').textContent = on ? '✕' : '⤢'; }
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape') drawFs(false); });
 function drawChanged() { dDirty = true; $('d-status').textContent = 'Не збережено…'; clearTimeout(dTimer); dTimer = setTimeout(drawFlush, 1500); }
-function drawReset() { clearTimeout(dTimer); dGen++; dDirty = false; dBase = null; dStrokes = []; dLive = null; dDate = null; redraw(); $('d-status').textContent = ''; drawFs(false); }
+// Старі малюнки (до темної теми) малювались на пісочному фоні — показуємо їх так само
+function setLegacy(on) { $('draw').classList.toggle('legacy', on); }
+function drawReset() { setLegacy(false); clearTimeout(dTimer); dGen++; dDirty = false; dBase = null; dStrokes = []; dLive = null; dDate = null; redraw(); $('d-status').textContent = ''; drawFs(false); }
 async function drawLoad() {
   if (dDirty) await drawFlush();
   const gen = ++dGen; dBase = null; dStrokes = []; dLive = null; dDate = editDate; redraw();
   const e = photoEntry(), d = e && e.drawing;
+  setLegacy(!!d && !d.dark);
   $('d-status').textContent = d ? 'Завантажую малюнок…' : '';
   if (!d) return;
   try {
@@ -691,7 +694,7 @@ function drawFlush() {
       if (empty) {
         if (!e || !e.drawing) { st.textContent = ''; return; }
         try { await gh('DELETE', { message: 'delete drawing', sha: e.drawing.sha }, drawPath(date, e.drawing.id)); } catch (err) { if (!/404/.test(err.message)) throw err; }
-        delete e.drawing; await save(); st.textContent = 'Малюнок очищено ✓'; renderCal(0); return;
+        delete e.drawing; await save(); if (dDate === date) setLegacy(false); st.textContent = 'Малюнок очищено ✓'; renderCal(0); return;
       }
       const bytes = new Uint8Array(await (await pngP).arrayBuffer());
       const box = await DiaryCrypto.encryptBytes(pw, bytes);
@@ -702,7 +705,7 @@ function drawFlush() {
       e = byDate(date);
       if (!e) { e = { id: crypto.randomUUID(), date, created: now, title: '', learned: '', improve: '', notes: '', updated: now }; entries.push(e); }
       if (!current && editDate === date) current = e;
-      e.drawing = { id, sha: r.content.sha };
+      e.drawing = { id, sha: r.content.sha, ...(old && !old.dark ? {} : { dark: true }) };
       await save(); if (dDate === date) st.textContent = 'Малюнок збережено ✓'; renderCal(0);
     } catch (err) { if (dDate === date) { dDirty = true; st.textContent = 'Не збережено: ' + (err.message === 'Failed to fetch' ? 'немає звʼязку з GitHub.' : err.message); } }
   });
