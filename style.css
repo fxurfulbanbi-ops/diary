@@ -122,9 +122,9 @@ li:active{transform:scale(.98)}li small{color:var(--red);font-size:13px;display:
 .reflect .tgroup:last-child{margin-bottom:8px}
 .reflect textarea{border-radius:12px;padding:12px 14px;box-shadow:0 0 0 .5px var(--sep)}
 :root{--sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif}
-/* Warm brown theme (both light & dark) */
-:root,:root:root{--bg:#301f17;--bg2:#3d2a20;--card:#4a3328;--fg:#f5ece2;--muted:#bba894;--sep:rgba(245,236,226,.16);--red:#FF5A4E;--green:#3DDC6E;color-scheme:dark}
-.switch span{background:#5a4033}
+/* Black theme (both light & dark) */
+:root,:root:root{--bg:#000;--bg2:#1c1c1e;--card:#2c2c2e;--fg:#fff;--muted:#8e8e93;--sep:#38383a;--red:#FF5A4E;--green:#3DDC6E;color-scheme:dark}
+.switch span{background:#39393d}
 .wpanel,.panel{background:var(--bg2)}
 .trow.up{background:rgba(61,220,110,.14)}.trow.down{background:rgba(255,90,78,.15)}
 .trow.up input{background:rgba(61,220,110,.16)}.trow.down input{background:rgba(255,90,78,.17)}
@@ -200,6 +200,6 @@ input:focus,textarea:focus{box-shadow:0 0 0 2px #8a5a3b,0 0 0 4px rgba(203,183,1
 .draw.fs .dwrap{flex:1;aspect-ratio:auto;display:flex;align-items:center;justify-content:center;background:none;box-shadow:none}
 .draw.fs #d-canvas{width:min(100%,calc((100dvh - 130px)*4/3));height:auto;aspect-ratio:4/3;background:#CBB799;border-radius:12px}
 body.drawfs{overflow:hidden}
-.dtoast{position:absolute;left:50%;top:14px;transform:translateX(-50%);padding:6px 14px;border-radius:20px;background:rgba(48,31,23,.85);color:#f5ece2;font-size:13px;letter-spacing:.04em;pointer-events:none;opacity:0}
+.dtoast{position:absolute;left:50%;top:14px;transform:translateX(-50%);padding:6px 14px;border-radius:20px;background:rgba(0,0,0,.8);color:#f5ece2;font-size:13px;letter-spacing:.04em;pointer-events:none;opacity:0}
 .dtoast.show{animation:dtoast .9s ease forwards}
 @keyframes dtoast{0%{opacity:0;transform:translate(-50%,-6px) scale(.9)}15%,65%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0}}
